@@ -35,8 +35,8 @@ def start_seg_node():
         CompressedImage, 
         segmentation_callback)
     str_sub = rospy.Subscriber(
-        '/camera_front/image_color/compressed', 
-        String, 
+        '/test_msgs/string', 
+        String,
         str_callback)
     rospy.spin()
 
