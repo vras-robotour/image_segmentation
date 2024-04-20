@@ -1,21 +1,7 @@
-#import sklearn  # scikit-learn hack to fix the error on jetson
-
-#import torch
-#import hydra
-#import numpy as np
-#from PIL import Image
-#import albumentations as A
-#import pytorch_lightning as L
-#import matplotlib.pyplot as plt
-#from omegaconf import DictConfig, OmegaConf
-#from albumentations.pytorch import ToTensorV2
-#from pytorch_lightning.loggers import WandbLogger
+#!/usr/bin/env python
 
 import rospy
-#from std_msgs.msg import String
 from sensor_msgs.msg import CompressedImage
-
-#from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoint, regular_checkpoint, rgb_to_label
 
 # segmentation.py
 # Author: tvoje mama
