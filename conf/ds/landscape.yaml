@@ -1,0 +1,10 @@
+name: landscape
+path: data/LandscapeDataset
+mean: [ 0.4117, 0.4097, 0.3709 ]
+std: [ 0.2987, 0.2972, 0.3228 ]
+train_ratio: 0.8
+
+train_map:
+  0: 0
+  255: 1
+

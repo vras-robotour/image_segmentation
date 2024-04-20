@@ -1,0 +1,31 @@
+name: rugd
+path: data/RoboTour
+mean: [ 0.4040, 0.4040, 0.4016 ]
+std: [ 0.2646, 0.2668, 0.2685 ]
+
+color_map:
+  "0,0,0": 0           # void - void
+  "108,64,20": 1       # dirt - feasible
+  "255,229,204": 2     # sand - feasible
+  "0,102,0": 3         # grass - infeasible
+  "0,255,0": 4         # tree - infeasible
+  "0,153,153": 5       # pole - other
+  "0,128,255": 6       # water - other
+  "0,0,255": 7         # sky - other
+  "255,255,0": 8       # vehicle - other
+  "255,0,127": 9       # container/generic-object - other
+  "64,64,64": 10       # asphalt - feasible
+  "255,128,0": 11      # gravel - feasible
+  "255,0,0": 12        # building - other
+  "153,76,0": 13       # mulch - infeasible
+  "102,102,0": 14      # rock-bed - feasible
+  "102,0,0": 15        # log - other
+  "0,255,128": 16      # bicycle - other
+  "204,153,255": 17    # person - other
+  "102,0,204": 18      # fence - other
+  "255,153,204": 19    # bush - infeasible
+  "0,102,102": 20      # sign - other
+  "153,204,255": 21    # rock - other
+  "102,255,255": 22    # bridge - other
+  "101,101,11": 23     # concrete - feasible
+  "114,85,47": 24       # picnic-table - other

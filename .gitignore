@@ -1,0 +1,10 @@
+data/*
+outputs/
+wandb/
+lightning_logs/
+checkpoints/
+
+!data/.gitkeep
+
+*__pycache__/
+.idea

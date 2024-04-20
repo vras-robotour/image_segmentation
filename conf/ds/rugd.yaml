@@ -1,0 +1,96 @@
+name: rugd
+path: data/RUGD
+mean: [ 0.4040, 0.4040, 0.4016 ]
+std: [ 0.2646, 0.2668, 0.2685 ]
+
+color_map:
+  "0,0,0": 0           # void - void
+  "108,64,20": 1       # dirt - feasible
+  "255,229,204": 2     # sand - feasible
+  "0,102,0": 3         # grass - infeasible
+  "0,255,0": 4         # tree - infeasible
+  "0,153,153": 5       # pole - other
+  "0,128,255": 6       # water - other
+  "0,0,255": 7         # sky - other
+  "255,255,0": 8       # vehicle - other
+  "255,0,127": 9       # container/generic-object - other
+  "64,64,64": 10       # asphalt - feasible
+  "255,128,0": 11      # gravel - feasible
+  "255,0,0": 12        # building - other
+  "153,76,0": 13       # mulch - infeasible
+  "102,102,0": 14      # rock-bed - feasible
+  "102,0,0": 15        # log - other
+  "0,255,128": 16      # bicycle - other
+  "204,153,255": 17    # person - other
+  "102,0,204": 18      # fence - other
+  "255,153,204": 19    # bush - infeasible
+  "0,102,102": 20      # sign - other
+  "153,204,255": 21    # rock - other
+  "102,255,255": 22    # bridge - other
+  "101,101,11": 23     # concrete - feasible
+  "114,85,47": 24       # picnic-table - other
+
+color_map_old:
+  0: [ 0, 0, 0 ] # void - void
+  1: [ 108, 64, 20 ] # dirt - feasible
+  2: [ 255, 229, 204 ] # sand - feasible
+  3: [ 0, 102, 0 ] # grass - infeasible
+  4: [ 0, 255, 0 ]  # tree - infeasible
+  5: [ 0, 153, 153 ] # pole - other
+  6: [ 0, 128, 255 ] # water - other
+  7: [ 0, 0, 255 ] # sky - other
+  8: [ 255, 255, 0 ] # vehicle - other
+  9: [ 255, 0, 127 ] # container/generic-object - other
+  10: [ 64, 64, 64 ] # asphalt - feasible
+  11: [ 255, 128, 0 ] # gravel - feasible
+  12: [ 255, 0, 0 ] # building - other
+  13: [ 153, 76, 0 ] # mulch - infeasible
+  14: [ 102, 102, 0 ] # rock-bed - feasible
+  15: [ 102, 0, 0 ] # log - other
+  16: [ 0, 255, 128 ] # bicycle - other
+  17: [ 204, 153, 255 ] # person - other
+  18: [ 102, 0, 204 ] # fence - other
+  19: [ 255, 153, 204 ] # bush - infeasible
+  20: [ 0, 102, 102 ] # sign - other
+  21: [ 153, 204, 255 ] # rock - other
+  22: [ 102, 255, 255 ] # bridge - other
+  23: [ 101, 101, 11 ] # concrete - feasible
+  24: [ 114, 85, 47 ] # picnic-table - other
+
+
+# FEASIBLE: concrete, asphalt, gravel, sand, dirt, rock-bed
+# INFEASIBLE: tree, grass, bush, mulch
+# OTHER: sky, water, bicycle, vehicle, person, rock, bridge, sign, log, pole, building, fence, picnic-table, container/generic-object
+
+train_map_inv:
+  0: 0 # void
+  1: [ 1, 2, 10, 11, 14, 23 ] # feasible
+  2: [ 3, 4, 13, 19 ] # infeasible
+  3: [ 5, 6, 7, 8, 9, 12, 15, 16, 17, 18, 20, 21, 22, 24 ] # other
+
+train_map:
+  0: 0 # void
+  1: 1 # feasible
+  2: 1 # feasible
+  3: 2 # infeasible
+  4: 2 # infeasible
+  5: 3 # other
+  6: 3 # other
+  7: 3 # other
+  8: 3 # other
+  9: 3 # other
+  10: 1 # feasible
+  11: 1 # feasible
+  12: 3 # other
+  13: 2 # infeasible
+  14: 1 # feasible
+  15: 3 # other
+  16: 3 # other
+  17: 3 # other
+  18: 3 # other
+  19: 2 # infeasible
+  20: 3 # other
+  21: 3 # other
+  22: 3 # other
+  23: 1 # feasible
+  24: 3 # other
