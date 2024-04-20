@@ -2,6 +2,7 @@
 
 import rospy
 from sensor_msgs.msg import CompressedImage
+from std_msgs.msg import String
 
 # segmentation.py
 # Author: tvoje mama
@@ -15,6 +16,9 @@ from sensor_msgs.msg import CompressedImage
 
 def segmentation_callback(msg):
     rospy.loginfo("Segmentation in process")
+
+def str_callback(msg):
+    rospy.loginfo(msg.data)
 
 
 
@@ -30,7 +34,10 @@ def start_seg_node():
         '/camera_front/image_color/compressed', 
         CompressedImage, 
         segmentation_callback)
-
+    str_sub = rospy.Subscriber(
+        '/camera_front/image_color/compressed', 
+        String, 
+        str_callback)
     rospy.spin()
 
 if __name__ == '__main__':
