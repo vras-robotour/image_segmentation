@@ -18,6 +18,7 @@ def segmentation_callback(msg):
     rospy.loginfo("Segmentation in process")
 
 def str_callback(msg):
+    rospy.loginfo("jnsdcjncasdj")
     rospy.loginfo(msg.data)
 
 
@@ -35,7 +36,7 @@ def start_seg_node():
         CompressedImage, 
         segmentation_callback)
     str_sub = rospy.Subscriber(
-        '/test_msgs/string', 
+        'chatter', 
         String,
         str_callback)
     rospy.spin()
