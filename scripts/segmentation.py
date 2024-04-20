@@ -20,8 +20,12 @@ def segmentation_callback(msg):
 
 def start_seg_node():
     rospy.init_node('segmentation_node')#, anonymous=True)
+    rospy.loginfo("Starting Segmentation node")
 
-
+    # img_sub = rospy.Subscriber(
+    #     '/camera_front/image_color/compressed', 
+    #     CompressedImage, 
+    #     segmentation_callback)
     img_sub = rospy.Subscriber(
         '/camera_front/image_color/compressed', 
         CompressedImage, 
