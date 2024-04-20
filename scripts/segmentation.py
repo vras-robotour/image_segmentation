@@ -8,9 +8,10 @@ from omegaconf import DictConfig, OmegaConf
 import torch
 import numpy as np
 from PIL import Image
+import os
 
 
-from ..src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoint, regular_checkpoint, rgb_to_label
+#from ..src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoint, regular_checkpoint, rgb_to_label
 
 
 # segmentation.py
@@ -36,12 +37,18 @@ def start_seg_node():
     rospy.init_node('segmentation_node')#, anonymous=True)
     rospy.loginfo("Starting Segmentation node")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    cfg = OmegaConf.load("../conf/config.yaml")
-    model = RoadModel(cfg, device)
+    #cfg = OmegaConf.load("../conf/config.yaml")
+    #model = RoadModel(cfg, device)
     # img_sub = rospy.Subscriber(
     #     '/camera_front/image_color/compressed', 
     #     CompressedImage, 
     #     segmentation_callback)
+
+    current_directory = os.getcwd()
+
+    # Print the current working directory
+    rospy.loginfo(current_directory)
+
     img_sub = rospy.Subscriber(
         '/camera_front/image_color/compressed', 
         CompressedImage, 
