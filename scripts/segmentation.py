@@ -91,7 +91,7 @@ class segmentation_node():
         
 
 if __name__ == '__main__':
-    with initialize(version_base=None, config_path="conf"):
+    with initialize(version_base=None, config_path="../conf"):
         cfg = compose(config_name="config")
         seg_node = segmentation_node(cfg)
         rospy.spin()
