@@ -75,18 +75,26 @@ class segmentation_node():
     def segmentation_cb(self, msg:CompressedImage):
         rospy.loginfo("Segmentation in process")
         rospy.loginfo(msg.format)
+        rospy.loginfo("raw shape")
+        rospy.loginfo(msg.data.shape)
         compressed_data = bytes(msg.data)
         np_image = np.array(Image.open(io.BytesIO(compressed_data)))
+        rospy.loginfo("image shape")
+        rospy.loginfo(np_image.shape)
         transform = A.Compose([
             A.Normalize(mean=cfg.ds.mean, std=cfg.ds.std, max_pixel_value=1.0),
             A.Resize(550, 688),
             ToTensorV2()
         ])
         sample = transform(image=np_image)
-        np_image = sample['image'].float().unsqueeze(0).to(self.device)
+        tensor_image = sample['image'].float().unsqueeze(0).to(self.device)
+        rospy.loginfo("tensor shape")
+        rospy.loginfo(tensor_image.shape)
         with torch.no_grad():
-            logits = self.model(np_image)
+            logits = self.model(tensor_image)
         prediction = logits.argmax(1).squeeze(0).cpu().numpy()
+        rospy.loginfo("prediction shape")
+        rospy.loginfo(prediction.shape)
         rospy.loginfo("Segmentation processed")
 
         image = Image.fromarray(prediction)
