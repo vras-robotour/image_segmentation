@@ -88,6 +88,15 @@ class segmentation_node():
             logits = self.model(np_image)
         prediction = logits.argmax(1).squeeze(0).cpu().numpy()
         rospy.loginfo("Segmentation processed")
+
+        image = Image.fromarray(prediction)
+        # Convert the image to bytes
+        byte_io = io.BytesIO()
+        image.save(byte_io, format='JPEG')
+        self.seg_pub.publish(
+            format="bgr8; jpeg compressed bgr8",
+            data=byte_io.getvalue())
+
         
 
 if __name__ == '__main__':
