@@ -4,7 +4,7 @@ defaults:
   - model: deeplabv3_resnet50
 
 action: null
-ckpt_path: null
+ckpt_path: checkpoints/e51-iou0.60.ckpt
 run_name: baseline
 
 optimizer:
