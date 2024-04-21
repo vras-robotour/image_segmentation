@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import sklearn  # scikit-learn hack to fix the error on jetson
 
 import os
 import sys
