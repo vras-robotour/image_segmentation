@@ -75,8 +75,9 @@ class segmentation_node():
     def segmentation_cb(self, msg:CompressedImage):
         rospy.loginfo("Segmentation in process")
         rospy.loginfo(msg.format)
-        rospy.loginfo("raw shape")
-        rospy.loginfo(msg.data.shape)
+        rospy.loginfo(msg.header)
+        #rospy.loginfo("raw shape")
+        #rospy.loginfo(msg.data)
         compressed_data = bytes(msg.data)
         np_image = np.array(Image.open(io.BytesIO(compressed_data)))
         rospy.loginfo("image shape")
