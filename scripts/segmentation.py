@@ -34,44 +34,43 @@ from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoin
 
 #global transform
 class segmentation_node():
-    def __init__(self):
-        with initialize(version_base=None, config_path="conf"):
-            self.cfg = compose(config_name="config")
-            rospy.init_node('segmentation_node')#, anonymous=True)
-            rospy.loginfo("Starting Segmentation node")
-            #cfg = OmegaConf.load("conf/config.yaml")
+    def __init__(self, cfg: DictConfig):
+        self.cfg = cfg
 
-            #print(self.cfg)
-            rospy.loginfo(self.cfg)
-            #rospy.loginfo(self.cfg.model)
+        rospy.init_node('segmentation_node')#, anonymous=True)
+        rospy.loginfo("Starting Segmentation node")
+        #cfg = OmegaConf.load("conf/config.yaml")
 
-            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-            #self.model = RoadModel(self.cfg, self.device)
+        #print(self.cfg)
+        rospy.loginfo(self.cfg)
+        #rospy.loginfo(self.cfg.model)
 
-            self.model = RoadModel.load_from_checkpoint(
-                self.cfg.ckpt_path, 
-                cfg=self.cfg, 
-                device=self.device).to(self.device)
-            self.model.eval()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        #self.model = RoadModel(self.cfg, self.device)
 
-            rospy.loginfo(self.cfg.ckpt_path)
-            
-            current_directory = os.getcwd()
+        self.model = RoadModel.load_from_checkpoint(
+            self.cfg.ckpt_path, 
+            cfg=self.cfg, 
+            device=self.device).to(self.device)
+        self.model.eval()
 
-            # Print the current working directory
-            rospy.loginfo(current_directory)
+        rospy.loginfo(self.cfg.ckpt_path)
+        
+        current_directory = os.getcwd()
 
-            self.img_sub = rospy.Subscriber(
-                '/camera_front/image_color/compressed', 
-                CompressedImage, 
-                self.segmentation_cb)
+        # Print the current working directory
+        rospy.loginfo(current_directory)
 
-            self.seg_pub = rospy.Publisher(
-                '/camera_front/image_segmentation/compressed',
-                CompressedImage, 
-                queue_size=10)
+        self.img_sub = rospy.Subscriber(
+            '/camera_front/image_color/compressed', 
+            CompressedImage, 
+            self.segmentation_cb)
 
-            rospy.spin()
+        self.seg_pub = rospy.Publisher(
+            '/camera_front/image_segmentation/compressed',
+            CompressedImage, 
+            queue_size=10)
+
 
     def segmentation_cb(self, msg:CompressedImage):
         rospy.loginfo("Segmentation in process")
@@ -92,7 +91,10 @@ class segmentation_node():
         
 
 if __name__ == '__main__':
-    global cfg
+    with initialize(version_base=None, config_path="conf"):
+        cfg = compose(config_name="config")
+        seg_node = segmentation_node(cfg)
+        rospy.spin()
     
 
 
