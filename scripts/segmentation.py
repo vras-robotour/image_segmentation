@@ -15,6 +15,7 @@ from albumentations.pytorch import ToTensorV2
 from std_msgs.msg import String
 from sensor_msgs.msg import CompressedImage
 from omegaconf import DictConfig, OmegaConf
+from hydra import compose, initialize
 
 root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 sys.path.append(root_dir)
@@ -31,70 +32,67 @@ from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoin
 #   -unfeasible    i.e. non-road (you dont want to ride here)
 #   -non-important i.e  objects  (you have no information what is behind (e.g people))
 
-global model
-global device
-global cfg
 #global transform
+class segmentation_node():
+    def __init__(self):
+        with initialize(version_base=None, config_path="conf"):
+            self.cfg = compose(config_name="config")
+            rospy.init_node('segmentation_node')#, anonymous=True)
+            rospy.loginfo("Starting Segmentation node")
+            #cfg = OmegaConf.load("conf/config.yaml")
 
+            #print(self.cfg)
+            rospy.loginfo(self.cfg)
+            #rospy.loginfo(self.cfg.model)
 
-def segmentation_callback(msg:CompressedImage):
-    rospy.loginfo("Segmentation in process")
-    rospy.loginfo(msg.format)
-    compressed_data = bytes(msg.data)
-    np_image = np.array(Image.open(io.BytesIO(compressed_data)))
-    transform = A.Compose([
-        A.Normalize(mean=cfg.ds.mean, std=cfg.ds.std, max_pixel_value=1.0),
-        A.Resize(550, 688),
-        ToTensorV2()
-    ])
-    sample = transform(image=np_image)
-    np_image = sample['image'].float().unsqueeze(0).to(device)
-    with torch.no_grad():
-        logits = model(np_image)
-    prediction = logits.argmax(1).squeeze(0).cpu().numpy()
-    rospy.loginfo("Segmentation processed")
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            #self.model = RoadModel(self.cfg, self.device)
 
+            self.model = RoadModel.load_from_checkpoint(
+                self.cfg.ckpt_path, 
+                cfg=self.cfg, 
+                device=self.device).to(self.device)
+            self.model.eval()
 
+            rospy.loginfo(self.cfg.ckpt_path)
+            
+            current_directory = os.getcwd()
 
-def start_seg_node():
-    global model
-    global device
-    global cfg
-    rospy.init_node('segmentation_node')#, anonymous=True)
-    rospy.loginfo("Starting Segmentation node")
-    cfg = OmegaConf.load("conf/config.yaml")
-    print(cfg)
-    rospy.loginfo(cfg)
+            # Print the current working directory
+            rospy.loginfo(current_directory)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = RoadModel(cfg, device)
+            self.img_sub = rospy.Subscriber(
+                '/camera_front/image_color/compressed', 
+                CompressedImage, 
+                self.segmentation_cb)
 
-    model = RoadModel.load_from_checkpoint(
-        cfg.ckpt_path, 
-        cfg=cfg, 
-        device=device).to(device)
-    model.eval()
+            self.seg_pub = rospy.Publisher(
+                '/camera_front/image_segmentation/compressed',
+                CompressedImage, 
+                queue_size=10)
 
-    rospy.loginfo(cfg.ckpt_path)
-    
-    current_directory = os.getcwd()
+            rospy.spin()
 
-    # Print the current working directory
-    rospy.loginfo(current_directory)
-
-    img_sub = rospy.Subscriber(
-        '/camera_front/image_color/compressed', 
-        CompressedImage, 
-        segmentation_callback)
-
-    seg_pub = rospy.Publisher(
-        '/camera_front/image_segmentation/compressed',
-        CompressedImage, 
-        queue_size=10)
-
-    rospy.spin()
+    def segmentation_cb(self, msg:CompressedImage):
+        rospy.loginfo("Segmentation in process")
+        rospy.loginfo(msg.format)
+        compressed_data = bytes(msg.data)
+        np_image = np.array(Image.open(io.BytesIO(compressed_data)))
+        transform = A.Compose([
+            A.Normalize(mean=cfg.ds.mean, std=cfg.ds.std, max_pixel_value=1.0),
+            A.Resize(550, 688),
+            ToTensorV2()
+        ])
+        sample = transform(image=np_image)
+        np_image = sample['image'].float().unsqueeze(0).to(self.device)
+        with torch.no_grad():
+            logits = self.model(np_image)
+        prediction = logits.argmax(1).squeeze(0).cpu().numpy()
+        rospy.loginfo("Segmentation processed")
+        
 
 if __name__ == '__main__':
-    start_seg_node()
+    global cfg
+    
 
 
