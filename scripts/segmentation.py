@@ -42,7 +42,7 @@ class segmentation_node():
         #cfg = OmegaConf.load("conf/config.yaml")
 
         #print(self.cfg)
-        rospy.loginfo(self.cfg)
+        #rospy.loginfo(self.cfg)
         #rospy.loginfo(self.cfg.model)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -112,7 +112,7 @@ class segmentation_node():
                 if mask_1[i, j] == 1:
                     mask_1[i, j] = 100
                     count=count+1
-
+        rospy.loginfo(mask_1)
         rospy.loginfo(count)
         # Combine masks along the last dimension to create the final array
         np_output_image = np.concatenate((mask_1, mask_2, mask_3), axis=-1).astype(np.uint8)
