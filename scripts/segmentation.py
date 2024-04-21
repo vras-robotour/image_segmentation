@@ -111,12 +111,13 @@ class segmentation_node():
 
         print(np_output_image.shape)  # Output: (550, 688, 3)
         # Convert the image to bytes
-        image = Image.fromarray(np_output_image)
-        byte_io = io.BytesIO()
-        image.save(byte_io, format='JPEG')
-        self.seg_pub.publish(
-            format="bgr8; jpeg compressed bgr8",
-            data=byte_io.getvalue())
+        pil_image = Image.fromarray(np_output_image)
+        pil_image.save("output.jpg")
+        # byte_io = io.BytesIO()
+        # pil_image.save(byte_io, format='JPEG')
+        # self.seg_pub.publish(
+        #     format="bgr8; jpeg compressed bgr8",
+        #     data=byte_io.getvalue())
 
         
 
