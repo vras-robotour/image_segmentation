@@ -100,11 +100,19 @@ class segmentation_node():
 
         
         mask_1 = prediction[..., None] == 1
-        mask_1[mask_1 == 1] = 200
+        
+        #mask_1[mask_1 == 1] = 200
         mask_2 = prediction[..., None] == 2
-        mask_2[mask_2 == 1] = 200
+        #mask_2[mask_2 == 1] = 200
         mask_3 = prediction[..., None] == 3
-        mask_3[mask_3 == 1] = 200
+        #mask_3[mask_3 == 1] = 200
+        count = 0
+        for i in range(mask_1.shape[0]):
+            for j in range(mask_1.shape[0]):
+                if mask_1[i, j] == 1:
+                    mask_1[i, j] = 100
+                    count=count+1
+
 
         # Combine masks along the last dimension to create the final array
         np_output_image = np.concatenate((mask_1, mask_2, mask_3), axis=-1).astype(np.uint8)
