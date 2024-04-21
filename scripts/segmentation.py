@@ -73,15 +73,15 @@ class segmentation_node():
 
 
     def segmentation_cb(self, msg:CompressedImage):
-        rospy.loginfo("Segmentation in process")
-        rospy.loginfo(msg.format)
-        rospy.loginfo(msg.header)
+        # rospy.loginfo("Segmentation in process")
+        # rospy.loginfo(msg.format)
+        # rospy.loginfo(msg.header)
         #rospy.loginfo("raw shape")
         #rospy.loginfo(msg.data)
         compressed_data = bytes(msg.data)
         np_image = np.array(Image.open(io.BytesIO(compressed_data)))
-        rospy.loginfo("image shape")
-        rospy.loginfo(np_image.shape)
+        # rospy.loginfo("image shape")
+        # rospy.loginfo(np_image.shape)
         transform = A.Compose([
             A.Normalize(mean=cfg.ds.mean, std=cfg.ds.std, max_pixel_value=1.0),
             A.Resize(550, 688),
@@ -89,13 +89,13 @@ class segmentation_node():
         ])
         sample = transform(image=np_image)
         tensor_image = sample['image'].float().unsqueeze(0).to(self.device)
-        rospy.loginfo("tensor shape")
-        rospy.loginfo(tensor_image.shape)
+        # rospy.loginfo("tensor shape")
+        # rospy.loginfo(tensor_image.shape)
         with torch.no_grad():
             logits = self.model(tensor_image)
         prediction = logits.argmax(1).squeeze(0).cpu().numpy().astype(np.uint8)
-        rospy.loginfo("prediction shape")
-        rospy.loginfo(prediction.shape)
+        # rospy.loginfo("prediction shape")
+        # rospy.loginfo(prediction.shape)
         rospy.loginfo("Segmentation processed")
 
         
@@ -113,7 +113,7 @@ class segmentation_node():
                     mask_1[i, j] = 100
                     count=count+1
 
-
+        rospy.loginfo(count)
         # Combine masks along the last dimension to create the final array
         np_output_image = np.concatenate((mask_1, mask_2, mask_3), axis=-1).astype(np.uint8)
 
