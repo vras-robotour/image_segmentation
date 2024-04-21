@@ -104,7 +104,7 @@ class segmentation_node():
         mask_3 = prediction[..., None] == 3
 
         # Combine masks along the last dimension to create the final array
-        np_output_image = np.concatenate((mask_1, mask_2, mask_3), axis=-1).astype(uint8)
+        np_output_image = np.concatenate((mask_1, mask_2, mask_3), axis=-1).astype(int)
 
         print(np_output_image.shape)  # Output: (550, 688, 3)
         # Convert the image to bytes
