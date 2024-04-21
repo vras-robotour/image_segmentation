@@ -11,7 +11,7 @@ from PIL import Image
 import os
 
 
-#from ..src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoint, regular_checkpoint, rgb_to_label
+from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoint, regular_checkpoint, rgb_to_label
 
 
 # segmentation.py

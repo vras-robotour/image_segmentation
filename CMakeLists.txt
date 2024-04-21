@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
+catkin_python_setup()
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -184,6 +186,11 @@ include_directories(
 #   FILES_MATCHING PATTERN "*.h"
 #   PATTERN ".svn" EXCLUDE
 # )
+
+install(DIRECTORY
+  modelSrc/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/modelSrc
+)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
