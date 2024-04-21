@@ -98,8 +98,17 @@ class segmentation_node():
         rospy.loginfo(prediction.shape)
         rospy.loginfo("Segmentation processed")
 
-        image = Image.fromarray(prediction)
+        
+        mask_1 = prediction[..., None] == 1
+        mask_2 = prediction[..., None] == 2
+        mask_3 = prediction[..., None] == 3
+
+        # Combine masks along the last dimension to create the final array
+        np_output_image = np.concatenate((mask_1, mask_2, mask_3), axis=-1).astype(uint8)
+
+        print(np_output_image.shape)  # Output: (550, 688, 3)
         # Convert the image to bytes
+        image = Image.fromarray(np_output_image)
         byte_io = io.BytesIO()
         image.save(byte_io, format='JPEG')
         self.seg_pub.publish(
