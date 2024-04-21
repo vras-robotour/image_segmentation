@@ -100,7 +100,8 @@ class segmentation_node():
 
         
         mask_1 = prediction[..., None] == 1
-        
+        rospy.loginfo(mask_1.dtype)
+        mask_1 = mask_1.astype(np.uint8)
         #mask_1[mask_1 == 1] = 200
         mask_2 = prediction[..., None] == 2
         #mask_2[mask_2 == 1] = 200
