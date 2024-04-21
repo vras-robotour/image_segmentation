@@ -102,11 +102,11 @@ class segmentation_node():
         feasible_label = (prediction[..., None] == 1).astype(np.uint8)
         feasible_label[feasible_label == 1] = 200
 
-        unfeasible_label = (prediction[..., None] == 2).astype(np.uint8)
-        unfeasible_label[unfeasible_label == 1] = 200
+        infeasible_label = (prediction[..., None] == 2).astype(np.uint8)
+        infeasible_label[infeasible_label == 1] = 200
 
-        nonimportant_label = (prediction[..., None] == 3).astype(np.uint8)
-        nonimportant_label[nonimportant_label == 1] = 200
+        other_label = (prediction[..., None] == 3).astype(np.uint8)
+        other_label[other_label == 1] = 200
         # count = 0
         # for i in range(mask_1.shape[0]):
         #     for j in range(mask_1.shape[0]):
@@ -121,9 +121,9 @@ class segmentation_node():
         # np_output_image[mask_2, 1] = 100
         # np_output_image[mask_3, 2] = 100
         np_output_image=np.concatenate((
-            nonimportant_label, 
-            unfeasible_label, 
-            feasible_label), 
+            infeasible_label, 
+            feasible_label, 
+            other_label), 
             axis=-1).astype(np.uint8)
 
         print(np_output_image.shape)  # Output: (550, 688, 3)
