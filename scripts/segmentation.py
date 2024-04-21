@@ -93,21 +93,21 @@ class segmentation_node():
         rospy.loginfo(tensor_image.shape)
         with torch.no_grad():
             logits = self.model(tensor_image)
-        prediction = logits.argmax(1).squeeze(0).cpu().numpy()
+        prediction = logits.argmax(1).squeeze(0).cpu().numpy().astype(np.uint8)
         rospy.loginfo("prediction shape")
         rospy.loginfo(prediction.shape)
         rospy.loginfo("Segmentation processed")
 
         
         mask_1 = prediction[..., None] == 1
-        mask_1[mask_1 == 1] = 100
+        mask_1[mask_1 == 1] = 200
         mask_2 = prediction[..., None] == 2
-        mask_2[mask_2 == 1] = 100
+        mask_2[mask_2 == 1] = 200
         mask_3 = prediction[..., None] == 3
-        mask_3[mask_3 == 1] = 100
+        mask_3[mask_3 == 1] = 200
 
         # Combine masks along the last dimension to create the final array
-        np_output_image = np.concatenate((mask_1, mask_2, mask_3), axis=-1).astype(np.uint8)
+        np_output_image = np.concatenate((mask_1, mask_2, mask_3), axis=-1)
 
         print(np_output_image.shape)  # Output: (550, 688, 3)
         # Convert the image to bytes
