@@ -31,9 +31,9 @@ from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoin
 #   -unfeasible    i.e. non-road (you dont want to ride here)
 #   -non-important i.e  objects  (you have no information what is behind (e.g people))
 
-model
-device
-cfg
+global model
+global device
+global cfg
 #global transform
 
 
