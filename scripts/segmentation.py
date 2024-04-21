@@ -99,11 +99,11 @@ class segmentation_node():
         rospy.loginfo("Segmentation processed")
 
         
-        unfeasible_label = (prediction[..., None] == 1).astype(np.uint8)
-        unfeasible_label[unfeasible_label == 1] = 200
-
-        feasible_label = (prediction[..., None] == 2).astype(np.uint8)
+        feasible_label = (prediction[..., None] == 1).astype(np.uint8)
         feasible_label[feasible_label == 1] = 200
+
+        unfeasible_label = (prediction[..., None] == 2).astype(np.uint8)
+        unfeasible_label[unfeasible_label == 1] = 200
 
         nonimportant_label = (prediction[..., None] == 3).astype(np.uint8)
         nonimportant_label[nonimportant_label == 1] = 200
@@ -122,8 +122,8 @@ class segmentation_node():
         # np_output_image[mask_3, 2] = 100
         np_output_image=np.concatenate((
             nonimportant_label, 
-            feasible_label, 
-            unfeasible_label), 
+            unfeasible_label, 
+            feasible_label), 
             axis=-1).astype(np.uint8)
 
         print(np_output_image.shape)  # Output: (550, 688, 3)
