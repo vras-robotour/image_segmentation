@@ -1,15 +1,18 @@
 #!/usr/bin/env python
 
-import rospy
-from sensor_msgs.msg import CompressedImage
-from std_msgs.msg import String
+import os
+import sys
 
-from omegaconf import DictConfig, OmegaConf
 import torch
+import rospy
 import numpy as np
 from PIL import Image
-import os
+from std_msgs.msg import String
+from sensor_msgs.msg import CompressedImage
+from omegaconf import DictConfig, OmegaConf
 
+root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+sys.path.append(root_dir)
 
 from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoint, regular_checkpoint, rgb_to_label
 
@@ -30,8 +33,6 @@ def segmentation_callback(msg):
 def str_callback(msg):
     rospy.loginfo("jnsdcjncasdj")
     rospy.loginfo(msg.data)
-
-
 
 def start_seg_node():
     rospy.init_node('segmentation_node')#, anonymous=True)
