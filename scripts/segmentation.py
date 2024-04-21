@@ -99,14 +99,14 @@ class segmentation_node():
         rospy.loginfo("Segmentation processed")
 
         
-        mask_1 = prediction[..., None] == 1
-        rospy.loginfo(mask_1.dtype)
-        mask_1 = mask_1.astype(np.uint8)
-        #mask_1[mask_1 == 1] = 200
-        mask_2 = prediction[..., None] == 2
-        #mask_2[mask_2 == 1] = 200
-        mask_3 = prediction[..., None] == 3
-        #mask_3[mask_3 == 1] = 200
+        mask_1 = (prediction[..., None] == 1).astype(np.uint8)
+        # rospy.loginfo(mask_1.dtype)
+        #mask_1 = mask_1
+        mask_1[mask_1 == 1] = 200
+        mask_2 = (prediction[..., None] == 2).astype(np.uint8)
+        mask_2[mask_2 == 1] = 200
+        mask_3 = (prediction[..., None] == 3).astype(np.uint8)
+        mask_3[mask_3 == 1] = 200
         # count = 0
         # for i in range(mask_1.shape[0]):
         #     for j in range(mask_1.shape[0]):
@@ -116,10 +116,11 @@ class segmentation_node():
         # rospy.loginfo(mask_1)
         # rospy.loginfo(count)
         # Combine masks along the last dimension to create the final array
-        np_output_image = np.zeros((550,688,3), np.uint8)
-        np_output_image[mask_1, 0] = 100
-        np_output_image[mask_2, 1] = 100
-        np_output_image[mask_3, 2] = 100
+        # np_output_image = np.zeros((550,688,3), np.uint8)
+        # np_output_image[mask_1, 0] = 100
+        # np_output_image[mask_2, 1] = 100
+        # np_output_image[mask_3, 2] = 100
+        np_output_image=np.concatenate((mask_1, mask_2, mask_3), axis=-1).astype(np.uint8)
 
         print(np_output_image.shape)  # Output: (550, 688, 3)
         # Convert the image to bytes
