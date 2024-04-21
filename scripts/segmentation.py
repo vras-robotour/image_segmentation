@@ -38,7 +38,7 @@ def start_seg_node():
     rospy.init_node('segmentation_node')#, anonymous=True)
     rospy.loginfo("Starting Segmentation node")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    #cfg = OmegaConf.load("../conf/config.yaml")
+    cfg = OmegaConf.load("../conf/config.yaml")
     #model = RoadModel(cfg, device)
     # img_sub = rospy.Subscriber(
     #     '/camera_front/image_color/compressed', 
