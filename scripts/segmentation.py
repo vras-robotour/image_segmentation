@@ -62,8 +62,10 @@ def start_seg_node():
     global cfg
     rospy.init_node('segmentation_node')#, anonymous=True)
     rospy.loginfo("Starting Segmentation node")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     cfg = OmegaConf.load("conf/config.yaml")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = RoadModel(cfg, device)
+
     model = RoadModel.load_from_checkpoint(
         cfg.ckpt_path, 
         cfg=cfg, 
