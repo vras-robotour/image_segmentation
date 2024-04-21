@@ -31,21 +31,22 @@ from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoin
 def segmentation_callback(msg):
     rospy.loginfo("Segmentation in process")
 
-def str_callback(msg):
-    rospy.loginfo("jnsdcjncasdj")
-    rospy.loginfo(msg.data)
+
+
+
 
 def start_seg_node():
     rospy.init_node('segmentation_node')#, anonymous=True)
     rospy.loginfo("Starting Segmentation node")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     cfg = OmegaConf.load("conf/config.yaml")
-    #model = RoadModel(cfg, device)
-    # img_sub = rospy.Subscriber(
-    #     '/camera_front/image_color/compressed', 
-    #     CompressedImage, 
-    #     segmentation_callback)
+    # model = RoadModel.load_from_checkpoint(
+    #     cfg.ckpt_path, 
+    #     cfg=cfg, 
+    #     device=device).to(device)
 
+    rospy.loginfo(cfg.ckpt_path)
+    
     current_directory = os.getcwd()
 
     # Print the current working directory
@@ -55,10 +56,12 @@ def start_seg_node():
         '/camera_front/image_color/compressed', 
         CompressedImage, 
         segmentation_callback)
-    str_sub = rospy.Subscriber(
-        'chatter', 
-        String,
-        str_callback)
+
+    seg_pub = rospy.Publisher(
+        '/camera_front/image_segmentation/compressed',
+        CompressedImage, 
+        queue_size=10)
+
     rospy.spin()
 
 if __name__ == '__main__':
