@@ -3,11 +3,15 @@ import sklearn  # scikit-learn hack to fix the error on jetson
 
 import os
 import sys
+import io
 
 import torch
 import rospy
 import numpy as np
 from PIL import Image
+import albumentations as A
+import pytorch_lightning as L
+from albumentations.pytorch import ToTensorV2
 from std_msgs.msg import String
 from sensor_msgs.msg import CompressedImage
 from omegaconf import DictConfig, OmegaConf
@@ -27,23 +31,44 @@ from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoin
 #   -unfeasible    i.e. non-road (you dont want to ride here)
 #   -non-important i.e  objects  (you have no information what is behind (e.g people))
 
+model
+device
+cfg
+#global transform
 
-def segmentation_callback(msg):
+
+def segmentation_callback(msg:CompressedImage):
     rospy.loginfo("Segmentation in process")
-
-
+    rospy.loginfo(msg.format)
+    compressed_data = bytes(msg.data)
+    np_image = np.array(Image.open(io.BytesIO(compressed_data)))
+    transform = A.Compose([
+        A.Normalize(mean=cfg.ds.mean, std=cfg.ds.std, max_pixel_value=1.0),
+        A.Resize(550, 688),
+        ToTensorV2()
+    ])
+    sample = transform(image=np_image)
+    np_image = sample['image'].float().unsqueeze(0).to(device)
+    with torch.no_grad():
+        logits = model(np_image)
+    prediction = logits.argmax(1).squeeze(0).cpu().numpy()
+    rospy.loginfo("Segmentation processed")
 
 
 
 def start_seg_node():
+    global model
+    global device
+    global cfg
     rospy.init_node('segmentation_node')#, anonymous=True)
     rospy.loginfo("Starting Segmentation node")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     cfg = OmegaConf.load("conf/config.yaml")
-    # model = RoadModel.load_from_checkpoint(
-    #     cfg.ckpt_path, 
-    #     cfg=cfg, 
-    #     device=device).to(device)
+    model = RoadModel.load_from_checkpoint(
+        cfg.ckpt_path, 
+        cfg=cfg, 
+        device=device).to(device)
+    model.eval()
 
     rospy.loginfo(cfg.ckpt_path)
     
