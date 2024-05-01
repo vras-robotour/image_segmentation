@@ -37,8 +37,7 @@ class segmentation_node():
     def __init__(self, cfg: DictConfig):
         self.cfg = cfg
 
-        rospy.init_node('segmentation_node')#, anonymous=True)
-        rospy.loginfo("Starting Segmentation node")
+
         #cfg = OmegaConf.load("conf/config.yaml")
 
         #print(self.cfg)
@@ -62,12 +61,12 @@ class segmentation_node():
         rospy.loginfo(current_directory)
 
         self.img_sub = rospy.Subscriber(
-            '/camera_front/image_color/compressed', 
+            '/image_to_segment/compressed', 
             CompressedImage, 
             self.segmentation_cb)
 
         self.seg_pub = rospy.Publisher(
-            '/camera_front/image_segmentation/compressed',
+            '/segmented_image/compressed',
             CompressedImage, 
             queue_size=10)
 
@@ -141,6 +140,8 @@ class segmentation_node():
         
 
 if __name__ == '__main__':
+    rospy.init_node('segmentation_node')#, anonymous=True)
+    rospy.loginfo("Starting Segmentation node")
     with initialize(version_base=None, config_path="../conf"):
         cfg = compose(config_name="config")
         seg_node = segmentation_node(cfg)

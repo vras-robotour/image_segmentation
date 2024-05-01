@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<launch>
+
+  <arg name="robot" default="spot-3"/><group if="$(eval {'ctu-robot': 0, 'flip': 0, 'marv-robot': 0, 'spot-3': 0}[robot])"/>
+
+
+  <node name="segmentation_node" pkg="image_segmentation" type="segmentation.py">
+
+    <!-- remap the image input and point cloud input-->
+    <remap from="/viz/camera_4/image/compressed" to="/image_to_segment/compressed" if="$(eval robot == 'ctu-robot')"/>
+    <remap from="TODO" to="image_to_segment/compressed" if="$(eval robot == 'flip')"/>
+    <remap from="TODO" to="image_to_segment/compressed" if="$(eval robot == 'marv-robot')"/>
+    <remap from="/camera_front/image_color/compressed" to="image_to_segment/compressed" if="$(eval robot == 'spot-3')"/>
+
+    <remap from="/segmented_image/compressed" to="/viz/camera_4/image_segmentation/compressed" if="$(eval robot == 'ctu-robot')"/>
+    <remap from="/segmented_image/compressed" to="TODO" if="$(eval robot == 'flip')"/>
+    <remap from="/segmented_image/compressed" to="TODO" if="$(eval robot == 'marv-robot')"/>
+    <remap from="/segmented_image/compressed" to="/camera_front/image_segmentation/compressed" if="$(eval robot == 'spot-3')"/>
+
+  </node>
+</launch>
+
+
+
