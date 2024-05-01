@@ -36,7 +36,7 @@ from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoin
 class segmentation_node():
     def __init__(self, cfg: DictConfig):
         self.cfg = cfg
-        self.cfg.ckpt_path = rospy.param("ckpt_path", "/home/robot/robotour2024/workspace/src/image_segmentation/checkpoints/e51-iou0.60.ckpt")
+        self.cfg.ckpt_path = rospy.get_param("ckpt_path", "/home/robot/robotour2024/workspace/src/image_segmentation/checkpoints/e51-iou0.60.ckpt")
 
         #cfg = OmegaConf.load("conf/config.yaml")
 
