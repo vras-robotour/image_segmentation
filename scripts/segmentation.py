@@ -54,6 +54,7 @@ class segmentation_node():
         self.model.eval()
 
         rospy.loginfo(self.cfg.ckpt_path)
+        rospy.loginfo(self.cfg)
         
         current_directory = os.getcwd()
 
