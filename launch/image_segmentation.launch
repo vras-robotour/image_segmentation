@@ -8,10 +8,10 @@
   <node name="segmentation_node" pkg="image_segmentation" type="segmentation.py" output="screen">
 
     <!-- remap the image input and point cloud input-->
-    <remap from="/viz/camera_4/image/compressed" to="/image_to_segment/compressed" if="$(eval robot == 'ctu-robot')"/>
-    <remap from="TODO" to="image_to_segment/compressed" if="$(eval robot == 'flip')"/>
-    <remap from="TODO" to="image_to_segment/compressed" if="$(eval robot == 'marv-robot')"/>
-    <remap from="/camera_front/image_color/compressed" to="image_to_segment/compressed" if="$(eval robot == 'spot-3')"/>
+    <remap from="/image_to_segment/compressed" to="/viz/camera_4/image/compressed" if="$(eval robot == 'ctu-robot')"/>
+    <remap from="/image_to_segment/compressed" to="TODO" if="$(eval robot == 'flip')"/>
+    <remap from="/image_to_segment/compressed" to="TODO" if="$(eval robot == 'marv-robot')"/>
+    <remap from="/image_to_segment/compressed" to="/camera_front/image_color/compressed" if="$(eval robot == 'spot-3')"/>
 
     <remap from="/segmented_image/compressed" to="/viz/camera_4/image_segmentation/compressed" if="$(eval robot == 'ctu-robot')"/>
     <remap from="/segmented_image/compressed" to="TODO" if="$(eval robot == 'flip')"/>
