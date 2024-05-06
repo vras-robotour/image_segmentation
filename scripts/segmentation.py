@@ -125,6 +125,12 @@ class segmentation_node():
             feasible_label, 
             other_label), 
             axis=-1).astype(np.uint8)
+        
+        out_transform = A.Compose([
+            A.Resize(1616, 1232)
+        ])
+
+        np_output_image = out_transform(image=np_output_image)
 
         print(np_output_image.shape)  # Output: (550, 688, 3)
         # Convert the image to bytes
