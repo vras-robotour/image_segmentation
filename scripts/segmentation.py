@@ -141,8 +141,8 @@ class segmentation_node():
         byte_io = io.BytesIO()
         pil_image.save(byte_io, format='JPEG')
         #im_header = Header(1,0, 'camera_4')
+        #            header=msg.header,
         self.seg_pub.publish(
-            header=msg.header,
             format="bgr8; jpeg compressed bgr8",
             data=byte_io.getvalue())
 
