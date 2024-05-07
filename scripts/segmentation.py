@@ -97,6 +97,7 @@ class segmentation_node():
         # rospy.loginfo("prediction shape")
         # rospy.loginfo(prediction.shape)
         rospy.loginfo("Segmentation processed")
+        rospy.loginfo(prediction)
 
         
         feasible_label = (prediction[..., None] == 1).astype(np.uint8)
@@ -145,6 +146,7 @@ class segmentation_node():
         self.seg_pub.publish(
             format="bgr8; jpeg compressed bgr8",
             data=byte_io.getvalue())
+        
 
         
 
