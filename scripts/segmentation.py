@@ -12,7 +12,7 @@ from PIL import Image
 import albumentations as A
 import pytorch_lightning as L
 from albumentations.pytorch import ToTensorV2
-from std_msgs.msg import String
+from std_msgs.msg import Header
 from sensor_msgs.msg import CompressedImage
 from omegaconf import DictConfig, OmegaConf
 from hydra import compose, initialize
@@ -24,7 +24,7 @@ from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoin
 
 
 # segmentation.py
-# Author: tvoje mama
+# Author: Filip Dasek
 # This ros node is used to subscribe images from camera
 # and publish a semantic segmentation with three types
 # of labels:
@@ -140,7 +140,9 @@ class segmentation_node():
 
         byte_io = io.BytesIO()
         pil_image.save(byte_io, format='JPEG')
+        #im_header = Header(1,0, 'camera_4')
         self.seg_pub.publish(
+            header=msg.header,
             format="bgr8; jpeg compressed bgr8",
             data=byte_io.getvalue())
 
