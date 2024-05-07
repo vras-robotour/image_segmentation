@@ -73,11 +73,11 @@ class segmentation_node():
 
 
     def segmentation_cb(self, msg:CompressedImage):
-        # rospy.loginfo("Segmentation in process")
-        # rospy.loginfo(msg.format)
-        # rospy.loginfo(msg.header)
-        #rospy.loginfo("raw shape")
-        #rospy.loginfo(msg.data)
+        rospy.loginfo("Segmentation in process")
+        rospy.loginfo(msg.format)
+        rospy.loginfo(msg.header)
+        rospy.loginfo("raw shape")
+        rospy.loginfo(msg.data)
         compressed_data = bytes(msg.data)
         np_image = np.array(Image.open(io.BytesIO(compressed_data)))
         # rospy.loginfo("image shape")
@@ -97,7 +97,7 @@ class segmentation_node():
         # rospy.loginfo("prediction shape")
         # rospy.loginfo(prediction.shape)
         rospy.loginfo("Segmentation processed")
-        rospy.loginfo(prediction)
+        #rospy.loginfo(prediction)
 
         
         feasible_label = (prediction[..., None] == 1).astype(np.uint8)
