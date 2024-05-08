@@ -81,7 +81,7 @@ class segmentation_node():
         compressed_data = bytes(msg.data)
         np_image = np.array(Image.open(io.BytesIO(compressed_data)))
         # rospy.loginfo("image shape")
-        rospy.loginfo(np_image)
+        #rospy.loginfo(np_image)
         transform = A.Compose([
             A.Normalize(mean=cfg.ds.mean, std=cfg.ds.std, max_pixel_value=1.0),
             A.Resize(550, 688),
