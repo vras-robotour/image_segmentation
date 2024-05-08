@@ -74,8 +74,8 @@ class segmentation_node():
 
     def segmentation_cb(self, msg:CompressedImage):
         rospy.loginfo("Segmentation in process")
-        rospy.loginfo(msg.format)
-        rospy.loginfo(msg.header)
+        #rospy.loginfo(msg.format)
+        #rospy.loginfo(msg.header)
         # rospy.loginfo("raw shape")
         # rospy.loginfo(msg.data)
         compressed_data = bytes(msg.data)
@@ -144,6 +144,7 @@ class segmentation_node():
         #im_header = Header(1,0, 'camera_4')
         #            header=msg.header,
         self.seg_pub.publish(
+            header=msg.header,
             format="bgr8; jpeg compressed bgr8",
             data=byte_io.getvalue())
         
