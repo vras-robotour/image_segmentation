@@ -76,13 +76,14 @@ class SegmentationNode():
         self.camera_width = rospy.get_param('camera_width', 688)
         rospy.logdebug(f"Camera height: {self.camera_height}")
         rospy.logdebug(f"Camera width: {self.camera_width}")
+        self.pic_max_age = rospy.get_param('pic_max_age', 0.3)
 
 
     def segmentation_cb(self, msg:CompressedImage):
         header = msg.header
         time_delay = (rospy.Time.now() - header.stamp).to_sec()
 
-        if time_delay > 0.3:
+        if time_delay > self.pic_max_age:
             rospy.logdebug(f"Threw away image with delay {time_delay}")
             return 
         

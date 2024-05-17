@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <launch>
+    <!-- user arguments -->
     <arg name="robot" default="spot-3"/><group if="$(eval {'ctu-robot': 0, 'flip': 0, 'marv-robot': 0, 'spot-3': 0}[robot])"/>
-
+    <arg name="picture_max_age" default="0.3"/>
 
     <arg name="camera_topic" value="/viz/camera_4/image/compressed" if="$(eval robot == 'ctu-robot')"/>
     <arg name="camera_topic" value="TODO" if="$(eval robot == 'flip')"/>
@@ -22,6 +23,8 @@
     <param name="camera_width" value="TODO" if="$(eval robot == 'flip')"/>
     <param name="camera_width" value="1920" if="$(eval robot == 'marv-robot')"/>
     <param name="camera_width" value="1920" if="$(eval robot == 'spot-3')"/>
+
+    <param name="pic_max_age" value="$(arg picture_max_age)"/>
 
     <node name="segmentation_node" pkg="image_segmentation" type="segmentation.py" output="screen">
 
