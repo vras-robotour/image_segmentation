@@ -4,6 +4,7 @@ import sklearn  # scikit-learn hack to fix the error on jetson
 import os
 import sys
 import io
+from datetime import datetime
 
 import torch
 import rospy
@@ -33,7 +34,7 @@ from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoin
 #   -non-important i.e  objects  (you have no information what is behind (e.g people))
 
 #global transform
-class segmentation_node():
+class SegmentationNode():
     def __init__(self, cfg: DictConfig):
         self.cfg = cfg
         self.cfg.ckpt_path = rospy.get_param("ckpt_path", "/home/robot/robotour2024/workspace/src/image_segmentation/checkpoints/e51-iou0.60.ckpt")
@@ -64,7 +65,7 @@ class segmentation_node():
         self.img_sub = rospy.Subscriber(
             '/image_to_segment/compressed', 
             CompressedImage, 
-            self.segmentation_cb)
+            self.segmentation_cb, queue_size=None)
 
         self.seg_pub = rospy.Publisher(
             '/segmented_image/compressed',
@@ -73,15 +74,21 @@ class segmentation_node():
 
 
     def segmentation_cb(self, msg:CompressedImage):
-        rospy.loginfo("Segmentation in process")
-        #rospy.loginfo(msg.format)
-        #rospy.loginfo(msg.header)
-        # rospy.loginfo("raw shape")
-        # rospy.loginfo(msg.data)
+        header = msg.header
+        time_delay = (rospy.Time.now() - header.stamp).to_sec()
+
+        if time_delay > 0.3:
+            rospy.logdebug(f"Threw away image with delay {time_delay}")
+            return 
+        
+        msg_date = datetime.fromtimestamp(header.stamp.to_sec())
+        rospy.logdebug(f"Successfully received image published at: {msg_date}")
+        now_date = datetime.fromtimestamp(rospy.Time.now().to_sec())
+        rospy.logdebug(f"Starting segmentation at: {now_date}")
+        time_start = rospy.Time.now()
+        
         compressed_data = bytes(msg.data)
         np_image = np.array(Image.open(io.BytesIO(compressed_data)))
-        # rospy.loginfo("image shape")
-        #rospy.loginfo(np_image)
         transform = A.Compose([
             A.Normalize(mean=cfg.ds.mean, std=cfg.ds.std, max_pixel_value=1.0),
             A.Resize(550, 688),
@@ -89,17 +96,10 @@ class segmentation_node():
         ])
         sample = transform(image=np_image)
         tensor_image = sample['image'].float().unsqueeze(0).to(self.device)
-        # rospy.loginfo("tensor shape")
-        # rospy.loginfo(tensor_image.shape)
         with torch.no_grad():
             logits = self.model(tensor_image)
         prediction = logits.argmax(1).squeeze(0).cpu().numpy().astype(np.uint8)
-        # rospy.loginfo("prediction shape")
-        # rospy.loginfo(prediction.shape)
-        rospy.loginfo("Segmentation processed")
-        #rospy.loginfo(prediction)
 
-        
         feasible_label = (prediction[..., None] == 1).astype(np.uint8)
         feasible_label[feasible_label == 1] = 200
 
@@ -108,19 +108,7 @@ class segmentation_node():
 
         other_label = (prediction[..., None] == 3).astype(np.uint8)
         other_label[other_label == 1] = 200
-        # count = 0
-        # for i in range(mask_1.shape[0]):
-        #     for j in range(mask_1.shape[0]):
-        #         if mask_1[i, j] == 1:
-        #             mask_1[i, j] = 100
-        #             count=count+1
-        # rospy.loginfo(mask_1)
-        # rospy.loginfo(count)
-        # Combine masks along the last dimension to create the final array
-        # np_output_image = np.zeros((550,688,3), np.uint8)
-        # np_output_image[mask_1, 0] = 100
-        # np_output_image[mask_2, 1] = 100
-        # np_output_image[mask_3, 2] = 100
+        
         np_output_image=np.concatenate((
             infeasible_label, 
             feasible_label, 
@@ -133,30 +121,28 @@ class segmentation_node():
 
         np_output_image = out_transform(image=np_output_image)['image']
 
-        print(np_output_image.shape)  # Output: (550, 688, 3)
-        # Convert the image to bytes
-
         pil_image = Image.fromarray(np_output_image)
         #pil_image.save("output.jpg")
 
         byte_io = io.BytesIO()
         pil_image.save(byte_io, format='JPEG')
-        #im_header = Header(1,0, 'camera_4')
-        #            header=msg.header,
         self.seg_pub.publish(
             header=msg.header,
             format="bgr8; jpeg compressed bgr8",
             data=byte_io.getvalue())
+        end_date = datetime.fromtimestamp(rospy.Time.now().to_sec())
+        rospy.logdebug(f"Published segmentation at: {end_date}")
+        rospy.loginfo(f"Segmentation delay: {(rospy.Time.now() - header.stamp).to_sec()}")
         
 
         
 
 if __name__ == '__main__':
-    rospy.init_node('segmentation_node')#, anonymous=True)
+    rospy.init_node('segmentation_node', log_level=rospy.DEBUG)
     rospy.loginfo("Starting Segmentation node")
     with initialize(version_base=None, config_path="../conf"):
         cfg = compose(config_name="config")
-        seg_node = segmentation_node(cfg)
+        seg_node = SegmentationNode(cfg)
         rospy.spin()
     
 
