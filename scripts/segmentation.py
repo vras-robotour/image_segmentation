@@ -74,6 +74,8 @@ class SegmentationNode():
         
         self.camera_height = rospy.get_param('camera_height', 550)
         self.camera_width = rospy.get_param('camera_width', 688)
+        rospy.logdebug(f"Camera height: {self.camera_height}")
+        rospy.logdebug(f"Camera width: {self.camera_width}")
 
 
     def segmentation_cb(self, msg:CompressedImage):
