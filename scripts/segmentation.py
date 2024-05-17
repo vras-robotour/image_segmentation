@@ -7,6 +7,7 @@ import io
 from datetime import datetime
 
 import torch
+import matplotlib.cm as cm
 import rospy
 import numpy as np
 from PIL import Image
@@ -105,6 +106,15 @@ class SegmentationNode():
         with torch.no_grad():
             logits = self.model(tensor_image)
         prediction = logits.argmax(1).squeeze(0).cpu().numpy().astype(np.uint8)
+
+        #-ENTROPY--------------------------------------------------------------
+        prob = torch.nn.functional.softmax(logits, dim=0)
+        entropy = -torch.sum(prob * torch.log(prob), dim=0)
+        # Create RGB from entropy values
+        entropy = entropy.cpu().detach().numpy()
+        entropy = (entropy - entropy.min()) / (entropy.max() - entropy.min())
+        #entropy = cm.viridis(entropy)[..., :3]
+        rospy.loginfo(entropy.shape)
 
         feasible_label = (prediction[..., None] == 1).astype(np.uint8)
         feasible_label[feasible_label == 1] = 200
