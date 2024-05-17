@@ -2,6 +2,7 @@
 <launch>
     <arg name="robot" default="spot-3"/><group if="$(eval {'ctu-robot': 0, 'flip': 0, 'marv-robot': 0, 'spot-3': 0}[robot])"/>
 
+
     <arg name="camera_topic" value="/viz/camera_4/image/compressed" if="$(eval robot == 'ctu-robot')"/>
     <arg name="camera_topic" value="TODO" if="$(eval robot == 'flip')"/>
     <arg name="camera_topic" value="/camera_front/image_color/compressed" if="$(eval robot == 'marv-robot')"/>
@@ -11,6 +12,16 @@
     <arg name="segmentation_topic" value="TODO" if="$(eval robot == 'flip')"/>
     <arg name="segmentation_topic" value="/camera_front/image_segmentation/compressed" if="$(eval robot == 'marv-robot')"/>
     <arg name="segmentation_topic" value="/camera_front/image_segmentation/compressed" if="$(eval robot == 'spot-3')"/>
+
+    <param name="camera_height" value="1616" if="$(eval robot == 'ctu-robot')"/>
+    <param name="camera_height" value="TODO" if="$(eval robot == 'flip')"/>
+    <param name="camera_height" value="1920" if="$(eval robot == 'ctu-robot')"/>
+    <param name="camera_height" value="1200" if="$(eval robot == 'spot-3')"/>
+
+    <param name="camera_width" value="1232" if="$(eval robot == 'ctu-robot')"/>
+    <param name="camera_width" value="TODO" if="$(eval robot == 'flip')"/>
+    <param name="camera_width" value="1920" if="$(eval robot == 'ctu-robot')"/>
+    <param name="camera_width" value="1200" if="$(eval robot == 'spot-3')"/>
 
     <node name="segmentation_node" pkg="image_segmentation" type="segmentation.py" output="screen">
 

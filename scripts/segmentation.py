@@ -71,6 +71,9 @@ class SegmentationNode():
             '/segmented_image/compressed',
             CompressedImage, 
             queue_size=10)
+        
+        self.camera_height = rospy.get_param('camera_height', 550)
+        self.camera_width = rospy.get_param('camera_width', 688)
 
 
     def segmentation_cb(self, msg:CompressedImage):
@@ -116,7 +119,7 @@ class SegmentationNode():
             axis=-1).astype(np.uint8)
         
         out_transform = A.Compose([
-            A.Resize(1616, 1232)
+            A.Resize(self.camera_height, self.camera_width)
         ])
 
         np_output_image = out_transform(image=np_output_image)['image']
