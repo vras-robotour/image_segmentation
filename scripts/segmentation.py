@@ -118,7 +118,7 @@ class SegmentationNode:
 
         # Calculate entropy
         entropy = compute_entropy(logits).cpu().detach().numpy()
-        rospy.loginfo(f"Entropy shape: {entropy.shape}")
+
         # Apply the uncertainty function
         cost = apply_uncertainty_function(prediction, entropy)
 

@@ -14,6 +14,11 @@
     <arg name="segmentation_topic" value="/camera_front/image_segmentation/compressed" if="$(eval robot == 'marv-robot')"/>
     <arg name="segmentation_topic" value="/camera_front/image_segmentation/compressed" if="$(eval robot == 'spot-3')"/>
 
+    <arg name="cost_topic" value="/viz/camera_4/image_cost/compressed" if="$(eval robot == 'ctu-robot')"/>
+    <arg name="cost_topic" value="TODO" if="$(eval robot == 'flip')"/>
+    <arg name="cost_topic" value="/camera_front/image_cost/compressed" if="$(eval robot == 'marv-robot')"/>
+    <arg name="cost_topic" value="/camera_front/image_cost/compressed" if="$(eval robot == 'spot-3')"/>
+
     <param name="camera_height" value="1616" if="$(eval robot == 'ctu-robot')"/>
     <param name="camera_height" value="TODO" if="$(eval robot == 'flip')"/>
     <param name="camera_height" value="1200" if="$(eval robot == 'marv-robot')"/>
@@ -31,8 +36,11 @@
         <!-- input -->
         <remap from="/image_to_segment/compressed" to="$(arg camera_topic)"/>
 
-        <!-- output -->
+        <!-- segmentation -->
         <remap from="/segmented_image/compressed" to="$(arg segmentation_topic)"/>
+
+        <!-- cost -->
+        <remap from="/cost_image/compressed" to="$(arg cost_topic)"/>
 
     </node>
 </launch>
