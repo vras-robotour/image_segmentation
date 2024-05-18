@@ -132,6 +132,10 @@ class SegmentationNode:
         cost = cv2.resize(cost,
                           (self.camera_width, self.camera_height),
                           interpolation=cv2.INTER_LINEAR)
+
+        # Apply matplotlib colormap
+        cost = cv2.applyColorMap((cost * 255).astype(np.uint8), cv2.COLORMAP_VIRIDIS)
+
         return output_seg_image, cost
 
 
