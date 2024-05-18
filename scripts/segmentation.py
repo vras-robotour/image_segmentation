@@ -39,8 +39,7 @@ file_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.abspath(os.path.join(file_dir, ".."))
 sys.path.append(root_dir)
 
-from src import (RoadDataModule, RoadModel, LogPredictionsCallback,
-                 val_checkpoint, regular_checkpoint, rgb_to_label)
+from src import RoadModel, label_to_rgb
 
 CKPT_PATH = "/home/robot/robotour2024/workspace/src/image_segmentation/checkpoints/e51-iou0.60.ckpt"
 
@@ -50,7 +49,6 @@ class SegmentationNode:
 
         # Load the parameters from the launch file
         self.pic_max_age = rospy.get_param('pic_max_age', 0.3)
-        cfg.ckpt_path = rospy.get_param("ckpt_path", CKPT_PATH)
         self.camera_width = rospy.get_param('camera_width', 688)
         self.camera_height = rospy.get_param('camera_height', 550)
 
@@ -113,20 +111,26 @@ class SegmentationNode:
 
         # TODO: Not optimal, label -> rgb implementation
         # Create RGB segmentation image
-        feasible_label = (prediction[..., None] == 1).astype(np.uint8)
-        feasible_label[feasible_label == 1] = 200
+        
+        rospy.loginfo(prediction.shape)
+        rospy.loginfo(self.cfg.ds.color_map)
 
-        infeasible_label = (prediction[..., None] == 2).astype(np.uint8)
-        infeasible_label[infeasible_label == 1] = 200
+        output_image = label_to_rgb(prediction, self.cfg.ds.color_map)
 
-        other_label = (prediction[..., None] == 3).astype(np.uint8)
-        other_label[other_label == 1] = 200
+        #feasible_label = (prediction[..., None] == 1).astype(np.uint8)
+        #feasible_label[feasible_label == 1] = 200
 
-        output_image = np.concatenate((
-            infeasible_label, 
-            feasible_label, 
-            other_label), 
-            axis=-1).astype(np.uint8)
+        #infeasible_label = (prediction[..., None] == 2).astype(np.uint8)
+        #infeasible_label[infeasible_label == 1] = 200
+
+        #other_label = (prediction[..., None] == 3).astype(np.uint8)
+        #other_label[other_label == 1] = 200
+
+        #output_image = np.concatenate((
+        #    infeasible_label, 
+        #    feasible_label, 
+        #    other_label), 
+        #    axis=-1).astype(np.uint8)
 
 
         resize_transform = A.Compose([
@@ -134,7 +138,7 @@ class SegmentationNode:
         ])
 
         output_image = resize_transform(image=output_image)['image']
-        output_image = self.bridge.cv2_to_compressed_imgmsg(output_image, encoding="rgb8")
+        output_image = self.bridge.cv2_to_compressed_imgmsg(output_image)
         self.seg_pub.publish(output_image)
 
         # pil_image = Image.fromarray(np_output_image)
@@ -160,9 +164,6 @@ def msg_datetime(msg: CompressedImage) -> datetime:
 def now_datetime() -> datetime:
     return datetime.fromtimestamp(rospy.Time.now().to_sec())
 
-def label_to_rgb(label_image: np.ndarray, color_map: dict) -> np.ndarray:
-    raise NotImplementedError("This function is not implemented yet")
-
 def inference_transform(image: np.ndarray) -> torch.Tensor:
     raise NotImplementedError("This function is not implemented yet")
 
@@ -173,8 +174,9 @@ def resize(image: np.ndarray, height: int, width: int) -> np.ndarray:
 if __name__ == '__main__':
     rospy.init_node('segmentation_node', log_level=rospy.DEBUG)
     rospy.loginfo("Starting Segmentation node")
+    ckpt_path = rospy.get_param("ckpt_path", CKPT_PATH)
     with initialize(version_base=None, config_path="../conf"):
-        cfg = compose(config_name="config")
+        cfg = compose(config_name="config", overrides=["ds=robotour", f"ckpt_path={ckpt_path}"])
         seg_node = SegmentationNode(cfg)
         rospy.spin()
     
