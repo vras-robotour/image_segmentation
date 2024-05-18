@@ -14,12 +14,13 @@ Labels:
     - 2: infeasible (we don't want to ride here)
     - 3: other (non-important objects)
 """
-
+import cv2
 import sklearn  # scikit-learn hack to fix the error on jetson
 
 import os
 import io
 import sys
+from typing import Tuple
 from datetime import datetime
 
 import torch
@@ -71,6 +72,11 @@ class SegmentationNode:
             CompressedImage, 
             queue_size=10)
 
+        self.cost_pub = rospy.Publisher(
+            '/cost_image/compressed',
+            CompressedImage,
+            queue_size=10)
+
         rospy.logdebug(f"Camera height: {self.camera_height}")
         rospy.logdebug(f"Camera width: {self.camera_width}")
 
@@ -83,7 +89,18 @@ class SegmentationNode:
         rospy.logdebug(f"Successfully received image published at: " f"{msg_datetime(msg)}")
         rospy.logdebug(f"Starting segmentation at: {now_datetime()}")
 
-        # Extract image from message
+        output_seg_image, cost = self._predict(msg)
+
+        seg_msg = self.bridge.cv2_to_compressed_imgmsg(output_seg_image)
+        self.seg_pub.publish(seg_msg)
+
+        cost_msg = self.bridge.cv2_to_compressed_imgmsg(cost)
+        self.cost_pub.publish(cost_msg)
+
+        rospy.logdebug(f"Published segmentation at: {now_datetime()}")
+        rospy.loginfo(f"Segmentation delay: {msg_delay(msg)}")
+
+    def _predict(self, msg: CompressedImage) -> Tuple[np.ndarray, np.ndarray]:
         msg_image = np.array(Image.open(io.BytesIO(bytes(msg.data))))
 
         # Apply transformations
@@ -97,21 +114,23 @@ class SegmentationNode:
         prediction = logits.argmax(1).squeeze(0).cpu().numpy().astype(np.uint8)
 
         # Calculate entropy
-        prob = torch.nn.functional.softmax(logits, dim=0)
-        entropy = -torch.sum(prob * torch.log(prob), dim=0)
-        entropy = entropy.cpu().detach().numpy()
+        entropy = compute_entropy(logits).cpu().detach().numpy()
+
+        # Apply the uncertainty function
+        cost = apply_uncertainty_function(prediction, entropy)
 
         # Create RGB segmentation image
         output_seg_image = label_to_rgb(prediction, self.cfg.ds.color_map)
-        output_seg_image = A.Resize(height=self.camera_height,
-                                    width=self.camera_width)(image=output_seg_image)['image']
 
-        output_seg_image = self.bridge.cv2_to_compressed_imgmsg(output_seg_image)
-        self.seg_pub.publish(output_seg_image)
+        # Resize the outputs
+        output_seg_image = cv2.resize(output_seg_image,
+                                      (self.camera_width, self.camera_height),
+                                      interpolation=cv2.INTER_NEAREST)
+        cost = cv2.resize(cost,
+                          (self.camera_width, self.camera_height),
+                          interpolation=cv2.INTER_LINEAR)
+        return output_seg_image, cost
 
-        rospy.logdebug(f"Published segmentation at: {now_datetime()}")
-        rospy.loginfo(f"Segmentation delay: {msg_delay(msg)}")
-        
 
 def msg_delay(msg: CompressedImage) -> float:
     return (rospy.Time.now() - msg.header.stamp).to_sec()
@@ -134,6 +153,30 @@ def inference_transform(image: np.ndarray, device: torch.device) -> torch.Tensor
     sample = transform(image=image)
     tensor_image = sample['image'].float().unsqueeze(0).to(device)
     return tensor_image
+
+
+def compute_entropy(logits: torch.Tensor) -> torch.Tensor:
+    prob = torch.nn.functional.softmax(logits, dim=0)
+    entropy = -torch.sum(prob * torch.log(prob), dim=0)
+    return entropy
+
+
+def apply_uncertainty_function(image: np.ndarray, entropy: np.ndarray) -> np.ndarray:
+    result_array = np.zeros_like(image, dtype=float)
+
+    # Create boolean masks for each class
+    mask0 = (image == 0)
+    mask1 = (image == 1)
+    mask2 = (image == 2)
+    mask3 = (image == 3)
+
+    # Apply the entropy function based on the masks
+    result_array[mask0] = 0.5
+    result_array[mask1] = 0.5 * entropy[mask1]
+    result_array[mask2] = 1 - 0.5 * entropy[mask2]
+    result_array[mask3] = 0.5
+
+    return result_array
 
 
 if __name__ == '__main__':
