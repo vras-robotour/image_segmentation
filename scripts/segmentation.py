@@ -92,9 +92,11 @@ class SegmentationNode:
         output_seg_image, cost = self._predict(msg)
 
         seg_msg = self.bridge.cv2_to_compressed_imgmsg(output_seg_image)
+        seg_msg.header = msg.header
         self.seg_pub.publish(seg_msg)
 
         cost_msg = self.bridge.cv2_to_compressed_imgmsg(cost)
+        cost_msg.header = msg.header
         self.cost_pub.publish(cost_msg)
 
         rospy.logdebug(f"Published segmentation at: {now_datetime()}")
@@ -109,13 +111,14 @@ class SegmentationNode:
         # Perform inference
         with torch.no_grad():
             logits = self.model(model_input)
+            logits = logits.squeeze(0)
 
         # Select the most probable class
-        prediction = logits.argmax(1).squeeze(0).cpu().numpy().astype(np.uint8)
+        prediction = logits.argmax(0).cpu().numpy().astype(np.uint8)
 
         # Calculate entropy
         entropy = compute_entropy(logits).cpu().detach().numpy()
-
+        rospy.loginfo(f"Entropy shape: {entropy.shape}")
         # Apply the uncertainty function
         cost = apply_uncertainty_function(prediction, entropy)
 
