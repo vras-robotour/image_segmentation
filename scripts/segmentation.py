@@ -1,53 +1,62 @@
 #!/usr/bin/env python
+
+"""
+This script is used to perform semantic segmentation on images
+from the camera. The segmentation is performed using a trained
+model and the segmented image is published to the topic
+/segmented_image/compressed.
+
+Author: Filip Dasek
+
+Labels:
+    - 0: void (not used for training)
+    - 1: feasible (we want to ride here)
+    - 2: infeasible (we don't want to ride here)
+    - 3: other (non-important objects)
+"""
+
 import sklearn  # scikit-learn hack to fix the error on jetson
 
 import os
-import sys
 import io
+import sys
 from datetime import datetime
 
 import torch
-import matplotlib.cm as cm
 import rospy
 import numpy as np
 from PIL import Image
 import albumentations as A
 import pytorch_lightning as L
-from albumentations.pytorch import ToTensorV2
+from cv_bridge import CvBridge
 from std_msgs.msg import Header
+from hydra import compose, initialize
 from sensor_msgs.msg import CompressedImage
 from omegaconf import DictConfig, OmegaConf
-from hydra import compose, initialize
+from albumentations.pytorch import ToTensorV2
 
-root_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+file_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.abspath(os.path.join(file_dir, ".."))
 sys.path.append(root_dir)
 
-from src import RoadDataModule, RoadModel, LogPredictionsCallback, val_checkpoint, regular_checkpoint, rgb_to_label
+from src import (RoadDataModule, RoadModel, LogPredictionsCallback,
+                 val_checkpoint, regular_checkpoint, rgb_to_label)
+
+CKPT_PATH = "/home/robot/robotour2024/workspace/src/image_segmentation/checkpoints/e51-iou0.60.ckpt"
 
 
-# segmentation.py
-# Author: Filip Dasek
-# This ros node is used to subscribe images from camera
-# and publish a semantic segmentation with three types
-# of labels:
-#   -feasible      i.e. road     (you want to ride here)
-#   -unfeasible    i.e. non-road (you dont want to ride here)
-#   -non-important i.e  objects  (you have no information what is behind (e.g people))
-
-#global transform
-class SegmentationNode():
+class SegmentationNode:
     def __init__(self, cfg: DictConfig):
+
+        # Load the parameters from the launch file
+        self.pic_max_age = rospy.get_param('pic_max_age', 0.3)
+        cfg.ckpt_path = rospy.get_param("ckpt_path", CKPT_PATH)
+        self.camera_width = rospy.get_param('camera_width', 688)
+        self.camera_height = rospy.get_param('camera_height', 550)
+
         self.cfg = cfg
-        self.cfg.ckpt_path = rospy.get_param("ckpt_path", "/home/robot/robotour2024/workspace/src/image_segmentation/checkpoints/e51-iou0.60.ckpt")
-
-        #cfg = OmegaConf.load("conf/config.yaml")
-
-        #print(self.cfg)
-        #rospy.loginfo(self.cfg)
-        #rospy.loginfo(self.cfg.model)
-
+        self.bridge = CvBridge()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        #self.model = RoadModel(self.cfg, self.device)
 
         self.model = RoadModel.load_from_checkpoint(
             self.cfg.ckpt_path, 
@@ -55,47 +64,33 @@ class SegmentationNode():
             device=self.device).to(self.device)
         self.model.eval()
 
-        rospy.loginfo(self.cfg.ckpt_path)
-        rospy.loginfo(self.cfg)
-        
-        current_directory = os.getcwd()
-
-        # Print the current working directory
-        rospy.loginfo(current_directory)
-
         self.img_sub = rospy.Subscriber(
             '/image_to_segment/compressed', 
             CompressedImage, 
-            self.segmentation_cb, queue_size=None)
+            self.segmentation_cb,
+            queue_size=None)
 
         self.seg_pub = rospy.Publisher(
             '/segmented_image/compressed',
             CompressedImage, 
             queue_size=10)
-        
-        self.camera_height = rospy.get_param('camera_height', 550)
-        self.camera_width = rospy.get_param('camera_width', 688)
+
         rospy.logdebug(f"Camera height: {self.camera_height}")
         rospy.logdebug(f"Camera width: {self.camera_width}")
-        self.pic_max_age = rospy.get_param('pic_max_age', 0.3)
 
-
-    def segmentation_cb(self, msg:CompressedImage):
-        header = msg.header
-        time_delay = (rospy.Time.now() - header.stamp).to_sec()
-
+    def segmentation_cb(self, msg: CompressedImage):
+        time_delay = msg_delay(msg)
         if time_delay > self.pic_max_age:
             rospy.logdebug(f"Threw away image with delay {time_delay}")
             return 
-        
-        msg_date = datetime.fromtimestamp(header.stamp.to_sec())
-        rospy.logdebug(f"Successfully received image published at: {msg_date}")
-        now_date = datetime.fromtimestamp(rospy.Time.now().to_sec())
-        rospy.logdebug(f"Starting segmentation at: {now_date}")
-        time_start = rospy.Time.now()
-        
-        compressed_data = bytes(msg.data)
-        np_image = np.array(Image.open(io.BytesIO(compressed_data)))
+
+        rospy.logdebug(f"Successfully received image published at: " f"{msg_datetime(msg)}")
+        rospy.logdebug(f"Starting segmentation at: {now_datetime()}")
+
+        # Extract image from message
+        np_image = np.array(Image.open(io.BytesIO(bytes(msg.data))))
+
+        # Apply the same transformations as during training
         transform = A.Compose([
             A.Normalize(mean=cfg.ds.mean, std=cfg.ds.std, max_pixel_value=1.0),
             A.Resize(550, 688),
@@ -103,19 +98,21 @@ class SegmentationNode():
         ])
         sample = transform(image=np_image)
         tensor_image = sample['image'].float().unsqueeze(0).to(self.device)
+
+        # Perform inference
         with torch.no_grad():
             logits = self.model(tensor_image)
+
+        # Select the most probable class
         prediction = logits.argmax(1).squeeze(0).cpu().numpy().astype(np.uint8)
 
-        #-ENTROPY--------------------------------------------------------------
+        # Calculate entropy
         prob = torch.nn.functional.softmax(logits, dim=0)
         entropy = -torch.sum(prob * torch.log(prob), dim=0)
-        # Create RGB from entropy values
         entropy = entropy.cpu().detach().numpy()
-        entropy = (entropy - entropy.min()) / (entropy.max() - entropy.min())
-        #entropy = cm.viridis(entropy)[..., :3]
-        rospy.loginfo(entropy.shape)
 
+        # TODO: Not optimal, label -> rgb implementation
+        # Create RGB segmentation image
         feasible_label = (prediction[..., None] == 1).astype(np.uint8)
         feasible_label[feasible_label == 1] = 200
 
@@ -124,33 +121,53 @@ class SegmentationNode():
 
         other_label = (prediction[..., None] == 3).astype(np.uint8)
         other_label[other_label == 1] = 200
-        
-        np_output_image=np.concatenate((
+
+        output_image = np.concatenate((
             infeasible_label, 
             feasible_label, 
             other_label), 
             axis=-1).astype(np.uint8)
-        
-        out_transform = A.Compose([
+
+
+        resize_transform = A.Compose([
             A.Resize(self.camera_height, self.camera_width)
         ])
 
-        np_output_image = out_transform(image=np_output_image)['image']
+        output_image = resize_transform(image=output_image)['image']
+        output_image = self.bridge.cv2_to_compressed_imgmsg(output_image, encoding="rgb8")
+        self.seg_pub.publish(output_image)
 
-        pil_image = Image.fromarray(np_output_image)
-        #pil_image.save("output.jpg")
-
-        byte_io = io.BytesIO()
-        pil_image.save(byte_io, format='JPEG')
-        self.seg_pub.publish(
-            header=msg.header,
-            format="bgr8; jpeg compressed bgr8",
-            data=byte_io.getvalue())
+        # pil_image = Image.fromarray(np_output_image)
+        # #pil_image.save("output.jpg")
+        #
+        # byte_io = io.BytesIO()
+        # pil_image.save(byte_io, format='JPEG')
+        # self.seg_pub.publish(
+        #     header=msg.header,
+        #     format="bgr8; jpeg compressed bgr8",
+        #     data=byte_io.getvalue())
         end_date = datetime.fromtimestamp(rospy.Time.now().to_sec())
         rospy.logdebug(f"Published segmentation at: {end_date}")
-        rospy.loginfo(f"Segmentation delay: {(rospy.Time.now() - header.stamp).to_sec()}")
+        rospy.loginfo(f"Segmentation delay: {msg_delay(msg)}")
         
 
+def msg_delay(msg: CompressedImage) -> float:
+    return (rospy.Time.now() - msg.header.stamp).to_sec()
+
+def msg_datetime(msg: CompressedImage) -> datetime:
+    return datetime.fromtimestamp(msg.header.stamp.to_sec())
+
+def now_datetime() -> datetime:
+    return datetime.fromtimestamp(rospy.Time.now().to_sec())
+
+def label_to_rgb(label_image: np.ndarray, color_map: dict) -> np.ndarray:
+    raise NotImplementedError("This function is not implemented yet")
+
+def inference_transform(image: np.ndarray) -> torch.Tensor:
+    raise NotImplementedError("This function is not implemented yet")
+
+def resize(image: np.ndarray, height: int, width: int) -> np.ndarray:
+    raise NotImplementedError("This function is not implemented yet")
         
 
 if __name__ == '__main__':
