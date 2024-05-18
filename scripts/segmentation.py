@@ -27,12 +27,10 @@ import rospy
 import numpy as np
 from PIL import Image
 import albumentations as A
-import pytorch_lightning as L
 from cv_bridge import CvBridge
-from std_msgs.msg import Header
+from omegaconf import DictConfig
 from hydra import compose, initialize
 from sensor_msgs.msg import CompressedImage
-from omegaconf import DictConfig, OmegaConf
 from albumentations.pytorch import ToTensorV2
 
 file_dir = os.path.dirname(os.path.abspath(__file__))
@@ -86,20 +84,14 @@ class SegmentationNode:
         rospy.logdebug(f"Starting segmentation at: {now_datetime()}")
 
         # Extract image from message
-        np_image = np.array(Image.open(io.BytesIO(bytes(msg.data))))
+        msg_image = np.array(Image.open(io.BytesIO(bytes(msg.data))))
 
-        # Apply the same transformations as during training
-        transform = A.Compose([
-            A.Normalize(mean=cfg.ds.mean, std=cfg.ds.std, max_pixel_value=1.0),
-            A.Resize(550, 688),
-            ToTensorV2()
-        ])
-        sample = transform(image=np_image)
-        tensor_image = sample['image'].float().unsqueeze(0).to(self.device)
+        # Apply transformations
+        model_input = inference_transform(msg_image, self.device)
 
         # Perform inference
         with torch.no_grad():
-            logits = self.model(tensor_image)
+            logits = self.model(model_input)
 
         # Select the most probable class
         prediction = logits.argmax(1).squeeze(0).cpu().numpy().astype(np.uint8)
@@ -109,67 +101,40 @@ class SegmentationNode:
         entropy = -torch.sum(prob * torch.log(prob), dim=0)
         entropy = entropy.cpu().detach().numpy()
 
-        # TODO: Not optimal, label -> rgb implementation
         # Create RGB segmentation image
-        
-        rospy.loginfo(prediction.shape)
-        rospy.loginfo(self.cfg.ds.color_map)
+        output_seg_image = label_to_rgb(prediction, self.cfg.ds.color_map)
+        output_seg_image = A.Resize(height=self.camera_height,
+                                    width=self.camera_width)(image=output_seg_image)['image']
 
-        output_image = label_to_rgb(prediction, self.cfg.ds.color_map)
+        output_seg_image = self.bridge.cv2_to_compressed_imgmsg(output_seg_image)
+        self.seg_pub.publish(output_seg_image)
 
-        #feasible_label = (prediction[..., None] == 1).astype(np.uint8)
-        #feasible_label[feasible_label == 1] = 200
-
-        #infeasible_label = (prediction[..., None] == 2).astype(np.uint8)
-        #infeasible_label[infeasible_label == 1] = 200
-
-        #other_label = (prediction[..., None] == 3).astype(np.uint8)
-        #other_label[other_label == 1] = 200
-
-        #output_image = np.concatenate((
-        #    infeasible_label, 
-        #    feasible_label, 
-        #    other_label), 
-        #    axis=-1).astype(np.uint8)
-
-
-        resize_transform = A.Compose([
-            A.Resize(self.camera_height, self.camera_width)
-        ])
-
-        output_image = resize_transform(image=output_image)['image']
-        output_image = self.bridge.cv2_to_compressed_imgmsg(output_image)
-        self.seg_pub.publish(output_image)
-
-        # pil_image = Image.fromarray(np_output_image)
-        # #pil_image.save("output.jpg")
-        #
-        # byte_io = io.BytesIO()
-        # pil_image.save(byte_io, format='JPEG')
-        # self.seg_pub.publish(
-        #     header=msg.header,
-        #     format="bgr8; jpeg compressed bgr8",
-        #     data=byte_io.getvalue())
-        end_date = datetime.fromtimestamp(rospy.Time.now().to_sec())
-        rospy.logdebug(f"Published segmentation at: {end_date}")
+        rospy.logdebug(f"Published segmentation at: {now_datetime()}")
         rospy.loginfo(f"Segmentation delay: {msg_delay(msg)}")
         
 
 def msg_delay(msg: CompressedImage) -> float:
     return (rospy.Time.now() - msg.header.stamp).to_sec()
 
+
 def msg_datetime(msg: CompressedImage) -> datetime:
     return datetime.fromtimestamp(msg.header.stamp.to_sec())
+
 
 def now_datetime() -> datetime:
     return datetime.fromtimestamp(rospy.Time.now().to_sec())
 
-def inference_transform(image: np.ndarray) -> torch.Tensor:
-    raise NotImplementedError("This function is not implemented yet")
 
-def resize(image: np.ndarray, height: int, width: int) -> np.ndarray:
-    raise NotImplementedError("This function is not implemented yet")
-        
+def inference_transform(image: np.ndarray, device: torch.device) -> torch.Tensor:
+    transform = A.Compose([
+        A.Normalize(mean=cfg.ds.mean, std=cfg.ds.std, max_pixel_value=1.0),
+        A.Resize(550, 688),
+        ToTensorV2()
+    ])
+    sample = transform(image=image)
+    tensor_image = sample['image'].float().unsqueeze(0).to(device)
+    return tensor_image
+
 
 if __name__ == '__main__':
     rospy.init_node('segmentation_node', log_level=rospy.DEBUG)
