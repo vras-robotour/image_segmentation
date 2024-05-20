@@ -134,9 +134,10 @@ class SegmentationNode:
                           interpolation=cv2.INTER_LINEAR)
 
         # Apply matplotlib colormap
-        cost = cv2.applyColorMap((cost * 255).astype(np.uint8), cv2.COLORMAP_VIRIDIS)
+        output_cost_image = np.zeros((cost.shape[0],cost.shape[1], 3), dtype=np.uint8)
+        output_cost_image[:,:,0] = (cost * 255).astype(np.uint8)
 
-        return output_seg_image, cost
+        return output_seg_image, output_cost_image
 
 
 def msg_delay(msg: CompressedImage) -> float:
