@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <launch>
-    <!-- user arguments -->
     <arg name="robot" default="spot-3"/><group if="$(eval {'ctu-robot': 0, 'flip': 0, 'marv-robot': 0, 'spot-3': 0}[robot])"/>
     <arg name="picture_max_age" default="0.3"/>
+
+    <!-- ============= SEMANTIC SEGMENTATION ============= -->
 
     <arg name="camera_topic" value="/viz/camera_4/image/compressed" if="$(eval robot == 'ctu-robot')"/>
     <arg name="camera_topic" value="TODO" if="$(eval robot == 'flip')"/>
     <arg name="camera_topic" value="/camera_front/image_color/compressed" if="$(eval robot == 'marv-robot')"/>
     <arg name="camera_topic" value="/camera_front/image_color/compressed" if="$(eval robot == 'spot-3')"/>
 
-    <arg name="segmentation_topic" value="/viz/camera_4/image_segmentation/compressed" if="$(eval robot == 'ctu-robot')"/>
-    <arg name="segmentation_topic" value="TODO" if="$(eval robot == 'flip')"/>
-    <arg name="segmentation_topic" value="/camera_front/image_segmentation/compressed" if="$(eval robot == 'marv-robot')"/>
-    <arg name="segmentation_topic" value="/camera_front/image_segmentation/compressed" if="$(eval robot == 'spot-3')"/>
+    <arg name="seg_img_topic" value="/viz/camera_4/image_segmentation/compressed" if="$(eval robot == 'ctu-robot')"/>
+    <arg name="seg_img_topic" value="TODO" if="$(eval robot == 'flip')"/>
+    <arg name="seg_img_topic" value="/camera_front/image_segmentation/compressed" if="$(eval robot == 'marv-robot')"/>
+    <arg name="seg_img_topic" value="/camera_front/image_segmentation/compressed" if="$(eval robot == 'spot-3')"/>
 
-    <arg name="cost_topic" value="/viz/camera_4/image_cost/compressed" if="$(eval robot == 'ctu-robot')"/>
-    <arg name="cost_topic" value="TODO" if="$(eval robot == 'flip')"/>
-    <arg name="cost_topic" value="/camera_front/image_cost/compressed" if="$(eval robot == 'marv-robot')"/>
-    <arg name="cost_topic" value="/camera_front/image_cost/compressed" if="$(eval robot == 'spot-3')"/>
+    <arg name="cost_img_topic" value="/viz/camera_4/image_cost/compressed" if="$(eval robot == 'ctu-robot')"/>
+    <arg name="cost_img_topic" value="TODO" if="$(eval robot == 'flip')"/>
+    <arg name="cost_img_topic" value="/camera_front/image_cost/compressed" if="$(eval robot == 'marv-robot')"/>
+    <arg name="cost_img_topic" value="/camera_front/image_cost/compressed" if="$(eval robot == 'spot-3')"/>
 
     <param name="camera_height" value="1616" if="$(eval robot == 'ctu-robot')"/>
     <param name="camera_height" value="TODO" if="$(eval robot == 'flip')"/>
@@ -37,10 +38,60 @@
         <remap from="/image_to_segment/compressed" to="$(arg camera_topic)"/>
 
         <!-- segmentation -->
-        <remap from="/segmented_image/compressed" to="$(arg segmentation_topic)"/>
+        <remap from="/segmented_image/compressed" to="$(arg seg_img_topic)"/>
 
         <!-- cost -->
-        <remap from="/cost_image/compressed" to="$(arg cost_topic)"/>
+        <remap from="/cost_image/compressed" to="$(arg cost_img_topic)"/>
 
     </node>
+
+    <!-- ============= POINT CLOUD COLOR ============= -->
+
+    <arg name="camera_in" default="viz/camera_4/image_cost" if="$(eval robot == 'ctu-robot')"/>
+    <arg name="camera_in" default="TODO" if="$(eval robot == 'flip')"/>
+    <arg name="camera_in" default="camera_front/image_cost" if="$(eval robot == 'marv-robot')"/>
+    <arg name="camera_in" default="camera_front/image_cost" if="$(eval robot == 'spot-3')"/>
+
+    <arg name="cloud_in" default="points_filtered" if="$(eval robot == 'ctu-robot')"/>
+    <arg name="cloud_in" default="TODO" if="$(eval robot == 'flip')"/>
+    <arg name="cloud_in" default="points_filtered_jetson" if="$(eval robot == 'marv-robot')"/>
+    <arg name="cloud_in" default="points_filtered" if="$(eval robot == 'spot-3')"/>
+
+    <arg name="camera_info" default="viz/camera_4/camera_info" if="$(eval robot == 'ctu-robot')" />
+    <arg name="camera_info" default="TODO" if="$(eval robot == 'flip')" />
+    <arg name="camera_info" default="camera_front/camera_info" if="$(eval robot == 'marv-robot')" />
+    <arg name="camera_info" default="camera_front/camera_info" if="$(eval robot == 'spot-3')" />
+
+    <arg name="image_transport" default="compressed" />
+    <arg name="point_cloud_transport" default="raw" />
+    <arg name="tf_prefix" default="" />
+
+    <node name="semantic_to_cloud" pkg="nodelet" type="nodelet"
+          args="standalone point_cloud_color/point_cloud_color" respawn="true"
+          respawn_delay="1" output="screen">
+
+        <!-- remap the image input and point cloud input-->
+        <remap from="camera_0/image" to="$(arg camera_in)"/>
+        <remap from="cloud_in" to="$(arg cloud_in)"/>
+        <remap from="camera_0/camera_info" to="$(arg camera_info)"/>
+
+        <remap from="cloud_out" to="semantic_traversability"/>
+
+        <param name="image_transport"        value="$(arg image_transport)"/>
+        <param name="point_cloud_transport"  value="$(arg point_cloud_transport)"/>
+        <param name="fixed_frame"            value="$(arg tf_prefix)base_link"/>
+        <param name="num_cameras"            value="1"/>
+        <param name="max_image_age"          value="2000000000.0"/><!--WARNING TODO-->
+        <param name="use_first_valid"        value="true"/>
+        <param name="image_queue_size"       value="1"/>
+        <param name="point_cloud_queue_size" value="50"/>
+        <param name="wait_for_transform"     value="0.5"/>
+        <param name="default_color"          value="0x00000000"/>
+        <param name="synchronize"            value="false"/>
+    </node>
+
+    <!-- ============= SEMANTIC TRAVERSABILITY ============= -->
+
+<!--     <param name="color_cloud_topic" value="/cost_projected"/> -->
+<!--     <param name="cost_cloud_topic" value="/semantic_traversability"/> -->
 </launch>
