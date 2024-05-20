@@ -92,6 +92,8 @@
 
     <!-- ============= SEMANTIC TRAVERSABILITY ============= -->
 
-<!--     <param name="color_cloud_topic" value="/cost_projected"/> -->
-<!--     <param name="cost_cloud_topic" value="/semantic_traversability"/> -->
+    <node name="semantic_traversability_node" pkg="image_segmentation" type="traversability.py" output="screen">
+        <remap from="/cloud_in" to="semantic_traversability"/>
+        <remap from="/cloud_out" to="semantic_traversability_v2"/>
+    </node>
 </launch>
