@@ -14,11 +14,11 @@ Labels:
     - 2: infeasible (we don't want to ride here)
     - 3: other (non-important objects)
 """
-import cv2
 import sklearn  # scikit-learn hack to fix the error on jetson
 
 import os
 import io
+import cv2
 import sys
 from typing import Tuple
 from datetime import datetime
