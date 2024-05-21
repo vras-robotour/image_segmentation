@@ -133,9 +133,15 @@ class SegmentationNode:
                           (self.camera_width, self.camera_height),
                           interpolation=cv2.INTER_LINEAR)
 
+        # Convert the cost from [0, 1] to [0, 255]
+        cost = (cost * 255).astype(np.uint8)
+
+        # Make sure that no cost is 0 so make it 1
+        cost[cost == 0] = 1
+
         # Apply matplotlib colormap
-        output_cost_image = np.zeros((cost.shape[0],cost.shape[1], 3), dtype=np.uint8)
-        output_cost_image[:,:,0] = (cost * 255).astype(np.uint8)
+        output_cost_image = np.zeros((cost.shape[0], cost.shape[1], 3), dtype=np.uint8)
+        output_cost_image[:, :, 0] = cost
 
         return output_seg_image, output_cost_image
 
