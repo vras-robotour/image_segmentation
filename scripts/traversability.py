@@ -18,7 +18,7 @@ def unpack_rgb(rgb_float):
 
 
 def process_point_cloud(point_cloud_msg: PointCloud2):
-    rospy.logdebug(f"Fields: {point_cloud_msg.fields}")
+    # rospy.logdebug(f"Fields: {point_cloud_msg.fields}")
     # Extract points from the incoming point cloud message
     points = point_cloud2.read_points(point_cloud_msg, field_names=("x", "y", "z", "rgb"), skip_nans=True)
 
@@ -26,10 +26,10 @@ def process_point_cloud(point_cloud_msg: PointCloud2):
     for point in points:
         x, y, z, rgb_float = point
         r, g, b = unpack_rgb(rgb_float)
-        if r == 0:
+        if b == 0:
             cost = 0.5
         else:
-            cost = r / 255.0
+            cost = b / 255.0
         processed_points.append([x, y, z, r, g, b, cost])
 
     header = Header()
@@ -37,6 +37,7 @@ def process_point_cloud(point_cloud_msg: PointCloud2):
     header.frame_id = point_cloud_msg.header.frame_id
 
     # Define the fields for the new PointCloud2 message
+    
     fields = [
         PointField(name="x", offset=0, datatype=PointField.FLOAT32, count=1),
         PointField(name="y", offset=4, datatype=PointField.FLOAT32, count=1),
@@ -46,7 +47,6 @@ def process_point_cloud(point_cloud_msg: PointCloud2):
         PointField(name="b", offset=14, datatype=PointField.UINT8, count=1),
         PointField(name="cost", offset=16, datatype=PointField.FLOAT32, count=1)
     ]
-
     # Create a new PointCloud2 message
     filtered_cloud_msg = point_cloud2.create_cloud(header, fields, processed_points)
 

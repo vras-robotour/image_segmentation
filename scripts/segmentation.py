@@ -47,7 +47,7 @@ class SegmentationNode:
     def __init__(self, cfg: DictConfig):
 
         # Load the parameters from the launch file
-        self.pic_max_age = rospy.get_param('pic_max_age', 0.3)
+        self.pic_max_age = rospy.get_param('pic_max_age', 0.6)
         self.camera_width = rospy.get_param('camera_width', 688)
         self.camera_height = rospy.get_param('camera_height', 550)
 
