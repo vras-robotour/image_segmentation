@@ -16,7 +16,7 @@ matplotlib.pyplot.switch_backend('TkAgg')
 API_KEY = '4bacc032570420552ef6b038e1a1e8383ac372d9'
 
 DATASET_NAME = 'aleskucera/robotour-tradr'
-DATASET_RELEASE = 'v1.0'
+DATASET_RELEASE = 'v2.0'
 FILTERS = [LabelStatus('REVIEWED')]
 OUTPUT_DIR = './data/RoboTour'
 
@@ -59,18 +59,12 @@ def save_dataset(dataset):
             image = Image.fromarray(sample['image'])
         image.save(image_path, format='PNG')
 
-        if isinstance(sample['segmentation_bitmap'], Image.Image):
-            semantic_image = sample['segmentation_bitmap'].convert('RGB')
-        else:
-            if sample['segmentation_bitmap'].dtype != np.uint8:
-                semantic_bitmap = sample['segmentation_bitmap'].astype(np.uint8)
-                semantic_image = Image.fromarray(semantic_bitmap)
-            else:
-                semantic_image = Image.fromarray(sample['segmentation_bitmap'])
+        semantic_bitmap = get_semantic_bitmap(sample['segmentation_bitmap'], sample['annotations'])
 
         semantic_path = os.path.join(annotations_dir, name + '.png')
+        rgb_annotation = label_to_rgb(semantic_bitmap, color_map)
+        semantic_image = Image.fromarray(rgb_annotation.astype(np.uint8))
 
-        # Convert the semantic bitmap array to an Image object and save it
         semantic_image.save(semantic_path, format='PNG')
 
 

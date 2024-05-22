@@ -14,7 +14,7 @@ Labels:
     - 2: infeasible (we don't want to ride here)
     - 3: other (non-important objects)
 """
-import sklearn  # scikit-learn hack to fix the error on jetson
+#import sklearn  # scikit-learn hack to fix the error on jetson
 
 import os
 import io
@@ -40,7 +40,9 @@ sys.path.append(root_dir)
 
 from src import RoadModel, label_to_rgb
 
-CKPT_PATH = "/home/robot/robotour2024/workspace/src/image_segmentation/checkpoints/e51-iou0.60.ckpt"
+#CKPT_PATH = "/home/robot/robotour2024/workspace/src/image_segmentation/checkpoints/e51-iou0.60.ckpt"
+# CKPT_PATH = "/home/ales/school/robotour/workspace/src/image_segmentation/checkpoints/e57-iou0.96.ckpt"
+CKPT_PATH = "/home/ales/school/robotour/workspace/src/image_segmentation/checkpoints/latest-e63.ckpt"
 
 
 class SegmentationNode:
@@ -89,7 +91,11 @@ class SegmentationNode:
         rospy.logdebug(f"Successfully received image published at: " f"{msg_datetime(msg)}")
         rospy.logdebug(f"Starting segmentation at: {now_datetime()}")
 
+        # RGB -> BGR
         output_seg_image, cost = self._predict(msg)
+
+        output_seg_image = cv2.cvtColor(output_seg_image, cv2.COLOR_RGB2BGR)
+        cost = cv2.cvtColor(cost, cv2.COLOR_RGB2BGR)
 
         seg_msg = self.bridge.cv2_to_compressed_imgmsg(output_seg_image)
         seg_msg.header = msg.header
@@ -104,6 +110,12 @@ class SegmentationNode:
 
     def _predict(self, msg: CompressedImage) -> Tuple[np.ndarray, np.ndarray]:
         msg_image = np.array(Image.open(io.BytesIO(bytes(msg.data))))
+
+        # Get the max and min values of the image
+        min_value = np.min(msg_image)
+        max_value = np.max(msg_image)
+        rospy.logdebug(f"Min value: {min_value}")
+        rospy.logdebug(f"Max value: {max_value}")
 
         # Apply transformations
         model_input = inference_transform(msg_image, self.device)
@@ -159,6 +171,7 @@ def now_datetime() -> datetime:
 
 
 def inference_transform(image: np.ndarray, device: torch.device) -> torch.Tensor:
+    image = image.astype(np.float32) / 255.0
     transform = A.Compose([
         A.Normalize(mean=cfg.ds.mean, std=cfg.ds.std, max_pixel_value=1.0),
         A.Resize(550, 688),

@@ -26,10 +26,10 @@ def process_point_cloud(point_cloud_msg: PointCloud2):
     for point in points:
         x, y, z, rgb_float = point
         r, g, b = unpack_rgb(rgb_float)
-        if b == 0:
+        if r == 0:
             cost = 0.5
         else:
-            cost = b / 255.0
+            cost = r / 255.0
         processed_points.append([x, y, z, r, g, b, cost])
 
     header = Header()
