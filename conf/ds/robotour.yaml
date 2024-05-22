@@ -8,3 +8,9 @@ color_map:
   "0,255,0": 1         # feasible
   "255,0,0": 2         # infeasible
   "0,0,255": 3         # other
+
+train_map:
+  0: 0 # void
+  1: 1 # feasible
+  2: 2 # infeasible
+  3: 3 # other

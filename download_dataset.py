@@ -16,9 +16,9 @@ matplotlib.pyplot.switch_backend('TkAgg')
 API_KEY = '4bacc032570420552ef6b038e1a1e8383ac372d9'
 
 DATASET_NAME = 'aleskucera/robotour-tradr'
-DATASET_RELEASE = 'v0.1'
-FILTERS = [LabelStatus('LABELED')]
-OUTPUT_DIR = '../data/RoboTour'
+DATASET_RELEASE = 'v1.0'
+FILTERS = [LabelStatus('REVIEWED')]
+OUTPUT_DIR = './data/RoboTour'
 
 color_map = {
     "0,0,0": 0,
@@ -97,8 +97,8 @@ def show_dataset(dataset):
 
 def main():
     dataset = initialize_dataset()
-    # save_dataset(dataset)
-    show_dataset(dataset)
+    save_dataset(dataset)
+    # show_dataset(dataset)
 
 
 if __name__ == '__main__':
