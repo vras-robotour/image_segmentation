@@ -8,3 +8,5 @@ checkpoints/
 
 *__pycache__/
 .idea
+
+*.zip
