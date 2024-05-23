@@ -7,17 +7,6 @@ from sensor_msgs.msg import PointCloud2, PointField
 from sensor_msgs import point_cloud2
 from std_msgs.msg import Header
 
-
-def unpack_rgb(rgb_float):
-    """Unpack a 32-bit packed float into RGB components."""
-    s = struct.pack('>f', rgb_float)
-    i = struct.unpack('>I', s)[0]
-    r = (i >> 16) & 0x0000ff
-    g = (i >> 8) & 0x0000ff
-    b = i & 0x0000ff
-    return r, g, b
-
-
 def process_point_cloud(point_cloud_msg: PointCloud2):
     if msg_delay(point_cloud_msg) > 0.5:
         rospy.logwarn("Message delay is too high")
@@ -37,7 +26,9 @@ def process_point_cloud(point_cloud_msg: PointCloud2):
     g = (rgb_float >> 8) & 0xFF
     b = rgb_float & 0xFF
 
-    # Compute cost
+    # Compute cost from the intensity of the red channel
+    # If the r == 0 that means that there is no prediction (out of camera FOV)
+    # Other values should be 1-255, therefore we have normalize them
     cost = np.where(r == 0, 0.5, r / 255.0)
 
     # Create a structured array with the processed points
@@ -70,6 +61,6 @@ if __name__ == '__main__':
 
     rospy.Subscriber("cloud_in", PointCloud2, point_cloud_callback)
 
-    pub = rospy.Publisher("cloud_out", PointCloud2, queue_size=10)
+    pub = rospy.Publisher("cloud_out", PointCloud2, queue_size=1)
 
     rospy.spin()
