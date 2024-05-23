@@ -40,9 +40,9 @@ sys.path.append(root_dir)
 
 from src import RoadModel, label_to_rgb
 
-#CKPT_PATH = "/home/robot/robotour2024/workspace/src/image_segmentation/checkpoints/e51-iou0.60.ckpt"
+CKPT_PATH = "/home/robot/robotour2024/workspace/src/image_segmentation/checkpoints/latest-e63.ckpt"
 # CKPT_PATH = "/home/ales/school/robotour/workspace/src/image_segmentation/checkpoints/e57-iou0.96.ckpt"
-CKPT_PATH = "/home/ales/school/robotour/workspace/src/image_segmentation/checkpoints/latest-e63.ckpt"
+# CKPT_PATH = "/home/ales/school/robotour/workspace/src/image_segmentation/checkpoints/latest-e63.ckpt"
 
 
 class SegmentationNode:
@@ -99,10 +99,12 @@ class SegmentationNode:
 
         seg_msg = self.bridge.cv2_to_compressed_imgmsg(output_seg_image)
         seg_msg.header = msg.header
+        seg_msg.header.stamp = rospy.Time.now()
         self.seg_pub.publish(seg_msg)
 
         cost_msg = self.bridge.cv2_to_compressed_imgmsg(cost)
         cost_msg.header = msg.header
+        cost_msg.header.stamp = rospy.Time.now()
         self.cost_pub.publish(cost_msg)
 
         rospy.logdebug(f"Published segmentation at: {now_datetime()}")
@@ -110,12 +112,6 @@ class SegmentationNode:
 
     def _predict(self, msg: CompressedImage) -> Tuple[np.ndarray, np.ndarray]:
         msg_image = np.array(Image.open(io.BytesIO(bytes(msg.data))))
-
-        # Get the max and min values of the image
-        min_value = np.min(msg_image)
-        max_value = np.max(msg_image)
-        rospy.logdebug(f"Min value: {min_value}")
-        rospy.logdebug(f"Max value: {max_value}")
 
         # Apply transformations
         model_input = inference_transform(msg_image, self.device)
